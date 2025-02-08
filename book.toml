@@ -1,0 +1,6 @@
+[book]
+authors = ["peperu"]
+language = "en"
+multilingual = false
+src = "src"
+title = "Vulkan Tutorial"

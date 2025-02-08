@@ -1,18 +1,12 @@
-# Vertex input description
+# 버텍스 입력 구조 설명
 
-## Introduction
+## 소개
 
-In the next few chapters, we're going to replace the hardcoded vertex data in
-the vertex shader with a vertex buffer in memory. We'll start with the easiest
-approach of creating a CPU visible buffer and using `memcpy` to copy the vertex
-data into it directly, and after that we'll see how to use a staging buffer to
-copy the vertex data to high performance memory.
+이어지는 몇 장에서, 우리는 버텍스 셰이더의 하드코딩된 버텍스 데이터를 메모리에 있는 버텍스 버퍼로 대체할 것입니다. 우선 가장 쉬운 방법인 CPU 가시 버퍼를 생성하고 `memcpy`를 사용하여 버텍스 데이터를 직접 복사하는 방법부터 시작하고, 이후에 고성능 메모리로 버텍스 데이터를 복사하기 위한 스테이징 버퍼 사용 방법을 살펴볼 것입니다.
 
-## Vertex shader
+## 버텍스 셰이더(Vertex Shader)
 
-First change the vertex shader to no longer include the vertex data in the
-shader code itself. The vertex shader takes input from a vertex buffer using the
-`in` keyword.
+먼저 버텍스 셰이더 코드에서 버텍스 데이터를 제거하여 셰이더 자체에 버텍스 데이터가 포함되지 않도록 변경합니다. 버텍스 셰이더는 `in` 키워드를 사용하여 버텍스 버퍼로부터 데이터를 받아들입니다.
 
 ```glsl
 #version 450
@@ -28,36 +22,26 @@ void main() {
 }
 ```
 
-The `inPosition` and `inColor` variables are *vertex attributes*. They're
-properties that are specified per-vertex in the vertex buffer, just like we
-manually specified a position and color per vertex using the two arrays. Make
-sure to recompile the vertex shader!
+`inPosition`과 `inColor`는 버텍스 속성입니다. 이들은 버텍스 버퍼에서 버텍스별로 지정된 속성으로, 우리가 두 배열을 사용해 위치와 색상을 각 버텍스에 수동으로 지정했던 것처럼 작동합니다. 버텍스 셰이더를 재컴파일하는 것을 잊지 마십시오!
 
-Just like `fragColor`, the `layout(location = x)` annotations assign indices to
-the inputs that we can later use to reference them. It is important to know that
-some types, like `dvec3` 64 bit vectors, use multiple *slots*. That means that
-the index after it must be at least 2 higher:
+`fragColor`와 같이, `layout(location = x)` 주석은 나중에 참조하기 위해 입력에 인덱스를 할당합니다. `dvec3`와 같은 일부 유형은 여러 슬롯을 사용합니다. 즉, 그 다음 인덱스는 최소 2 이상이어야 합니다:
 
 ```glsl
 layout(location = 0) in dvec3 inPosition;
 layout(location = 2) in vec3 inColor;
 ```
 
-You can find more info about the layout qualifier in the [OpenGL wiki](https://www.khronos.org/opengl/wiki/Layout_Qualifier_(GLSL)).
+[OpenGL 위키](https://www.khronos.org/opengl/wiki/Layout_Qualifier_(GLSL))에서 레이아웃 한정자에 대한 자세한 정보를 찾을 수 있습니다.
 
-## Vertex data
+## 버텍스 데이터
 
-We're moving the vertex data from the shader code to an array in the code of our
-program. Start by including the GLM library, which provides us with linear
-algebra related types like vectors and matrices. We're going to use these types
-to specify the position and color vectors.
+우리는 셰이더 코드에서 프로그램 코드의 배열로 버텍스 데이터를 이동합니다. GLM 라이브러리를 포함하여 시작하세요. 이 라이브러리는 벡터와 행렬과 같은 선형 대수 관련 유형을 제공합니다. 이 유형들을 사용하여 위치와 색상 벡터를 지정할 것입니다.
 
 ```c++
 #include <glm/glm.hpp>
 ```
 
-Create a new structure called `Vertex` with the two attributes that we're going
-to use in the vertex shader inside it:
+버텍스 셰이더에서 사용될 두 요소가 포함된 `Vertex`라는 새로운 구조체를 생성합니다:
 
 ```c++
 struct Vertex {
@@ -66,8 +50,7 @@ struct Vertex {
 };
 ```
 
-GLM conveniently provides us with C++ types that exactly match the vector types
-used in the shader language.
+GLM은 셰이더 언어에서 사용되는 벡터 유형과 정확히 일치하는 C++ 유형을 편리하게 제공합니다.
 
 ```c++
 const std::vector<Vertex> vertices = {
@@ -77,18 +60,13 @@ const std::vector<Vertex> vertices = {
 };
 ```
 
-Now use the `Vertex` structure to specify an array of vertex data. We're using
-exactly the same position and color values as before, but now they're combined
-into one array of vertices. This is known as *interleaving* vertex attributes.
+이제 `Vertex` 구조를 사용하여 버텍스 데이터 배열을 지정합니다. 이전과 동일한 위치와 색상 값을 사용하지만, 이제 이들을 버텍스 요소를 인터리빙하는 하나의 배열로 결합했습니다.
 
-## Binding descriptions
+## 바인딩 및 속성 구조 정의
 
-The next step is to tell Vulkan how to pass this data format to the vertex
-shader once it's been uploaded into GPU memory. There are two types of
-structures needed to convey this information.
+다음 단계는 이 데이터 형식을 GPU 메모리에 업로드한 후 버텍스 셰이더로 전달하는 방법을 Vulkan에 알리는 것입니다. 이 정보를 전달하는 데 필요한 두 가지 유형의 구조체가 있습니다.
 
-The first structure is `VkVertexInputBindingDescription` and we'll add a member
-function to the `Vertex` struct to populate it with the right data.
+첫 번째 구조체는 `VkVertexInputBindingDescription`이며, `Vertex` 구조에 멤버 함수를 추가하여 이 구조를 올바르게 채웁니다.
 
 ```c++
 struct Vertex {
@@ -103,9 +81,7 @@ struct Vertex {
 };
 ```
 
-A vertex binding describes at which rate to load data from memory throughout the
-vertices. It specifies the number of bytes between data entries and whether to
-move to the next data entry after each vertex or after each instance.
+버텍스 바인딩은 버텍스를 통해 메모리에서 데이터를 로드하는 비율을 설명합니다. 데이터 항목 간의 바이트 수와 각 버텍스나 각 인스턴스 후에 다음 데이터 항목으로 이동할지를 지정합니다.
 
 ```c++
 VkVertexInputBindingDescription bindingDescription{};
@@ -114,23 +90,16 @@ bindingDescription.stride = sizeof(Vertex);
 bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 ```
 
-All of our per-vertex data is packed together in one array, so we're only going
-to have one binding. The `binding` parameter specifies the index of the binding
-in the array of bindings. The `stride` parameter specifies the number of bytes
-from one entry to the next, and the `inputRate` parameter can have one of the
-following values:
+모든 버텍스당 데이터는 하나의 배열에 패키지되어 있으므로 하나의 바인딩만 가질 것입니다. `binding` 매개변수는 바인딩 배열의 인덱스를 지정하고, `stride` 매개변수는 한 항목에서 다음 항목까지의 바이트 수를 지정하며, `inputRate` 매개변수는 다음 값 중 하나를 가질 수 있습니다:
 
-* `VK_VERTEX_INPUT_RATE_VERTEX`: Move to the next data entry after each vertex
-* `VK_VERTEX_INPUT_RATE_INSTANCE`: Move to the next data entry after each
-instance
+* `VK_VERTEX_INPUT_RATE_VERTEX`: 각 버텍스 후에 다음 데이터 항목으로 이동
+* `VK_VERTEX_INPUT_RATE_INSTANCE`: 각 인스턴스 후에 다음 데이터 항목으로 이동
 
-We're not going to use instanced rendering, so we'll stick to per-vertex data.
+우리는 인스턴스 렌더링을 사용하지 않을 것이므로 버텍스당 데이터를 사용할 것입니다.
 
-## Attribute descriptions
+## 속성 설명
 
-The second structure that describes how to handle vertex input is
-`VkVertexInputAttributeDescription`. We're going to add another helper function
-to `Vertex` to fill in these structs.
+버텍스 입력을 처리하는 방법을 설명하는 두 번째 구조는 `VkVertexInputAttributeDescription`입니다. 우리는 `Vertex`에 또 다른 도우미 함수를 추가하여 이 구조체들을 채울 것입니다.
 
 ```c++
 #include <array>
@@ -144,11 +113,7 @@ static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions
 }
 ```
 
-As the function prototype indicates, there are going to be two of these
-structures. An attribute description struct describes how to extract a vertex
-attribute from a chunk of vertex data originating from a binding description. We
-have two attributes, position and color, so we need two attribute description
-structs.
+함수 프로토타입이 나타내듯이 이 구조체는 두 개가 될 것입니다. 속성 설명 구조체는 바인딩 설명에서 기원하는 버텍스 데이터 덩어리에서 버텍스 속성을 추출하는 방법을 설명합니다. 우리는 위치와 색상의 두 속성을 가지고 있으므로 두 개의 속성 설명 구조체가 필요합니다.
 
 ```c++
 attributeDescriptions[0].binding = 0;
@@ -157,39 +122,24 @@ attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
 attributeDescriptions[0].offset = offsetof(Vertex, pos);
 ```
 
-The `binding` parameter tells Vulkan from which binding the per-vertex data
-comes. The `location` parameter references the `location` directive of the
-input in the vertex shader. The input in the vertex shader with location `0` is
-the position, which has two 32-bit float components.
+`binding` 매개변수는 버텍스당 데이터가 어디에서 오는지 Vulkan에 알려줍니다. `location` 매개변수는 버텍스 셰이더의 입력의 `location` 지시문을 참조합니다. 버텍스 셰이더의 위치 `0`에 있는 입력은 위치이며, 32비트 float
 
-The `format` parameter describes the type of data for the attribute. A bit
-confusingly, the formats are specified using the same enumeration as color
-formats. The following shader types and formats are commonly used together:
+의 두 구성 요소를 가지고 있습니다.
+
+`format` 매개변수는 속성 데이터의 유형을 설명합니다. 약간 혼란스럽게도, 형식은 색상 형식과 동일한 열거를 사용하여 지정됩니다. 일반적으로 함께 사용되는 셰이더 유형과 형식은 다음과 같습니다:
 
 * `float`: `VK_FORMAT_R32_SFLOAT`
 * `vec2`: `VK_FORMAT_R32G32_SFLOAT`
 * `vec3`: `VK_FORMAT_R32G32B32_SFLOAT`
 * `vec4`: `VK_FORMAT_R32G32B32A32_SFLOAT`
 
-As you can see, you should use the format where the amount of color channels
-matches the number of components in the shader data type. It is allowed to use
-more channels than the number of components in the shader, but they will be
-silently discarded. If the number of channels is lower than the number of
-components, then the BGA components will use default values of `(0, 0, 1)`. The
-color type (`SFLOAT`, `UINT`, `SINT`) and bit width should also match the type
-of the shader input. See the following examples:
+보시다시피, 색상 채널의 수가 셰이더 데이터 유형의 구성 요소 수와 일치하는 형식을 사용해야 합니다. 채널 수가 셰이더의 구성 요소 수보다 많을 경우 허용되지만, 그러한 경우 추가 채널은 조용히 버려집니다. 채널 수가 구성 요소 수보다 적은 경우, BGA 구성 요소는 기본값 `(0, 0, 1)`을 사용합니다. 색상 유형(`SFLOAT`, `UINT`, `SINT`) 및 비트 폭도 셰이더 입력의 유형과 일치해야 합니다. 다음 예를 참조하십시오:
 
-* `ivec2`: `VK_FORMAT_R32G32_SINT`, a 2-component vector of 32-bit signed
-integers
-* `uvec4`: `VK_FORMAT_R32G32B32A32_UINT`, a 4-component vector of 32-bit
-unsigned integers
-* `double`: `VK_FORMAT_R64_SFLOAT`, a double-precision (64-bit) float
+* `ivec2`: `VK_FORMAT_R32G32_SINT`, 32비트 부호 있는 정수의 2-구성 요소 벡터
+* `uvec4`: `VK_FORMAT_R32G32B32A32_UINT`, 32비트 부호 없는 정수의 4-구성 요소 벡터
+* `double`: `VK_FORMAT_R64_SFLOAT`, 더블 정밀도(64비트) float
 
-The `format` parameter implicitly defines the byte size of attribute data and
-the `offset` parameter specifies the number of bytes since the start of the
-per-vertex data to read from. The binding is loading one `Vertex` at a time and
-the position attribute (`pos`) is at an offset of `0` bytes from the beginning
-of this struct. This is automatically calculated using the `offsetof` macro.
+`format` 매개변수는 속성 데이터의 바이트 크기를 암시적으로 정의하고 `offset` 매개변수는 버텍스당 데이터의 시작부터 읽을 바이트 수를 지정합니다. 바인딩은 한 번에 하나의 `Vertex`를 로드하고 위치 속성(`pos`)은 이 구조체의 시작부터 `0` 바이트 오프셋에 있습니다. 이는 `offsetof` 매크로를 사용하여 자동으로 계산됩니다.
 
 ```c++
 attributeDescriptions[1].binding = 0;
@@ -198,13 +148,11 @@ attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
 attributeDescriptions[1].offset = offsetof(Vertex, color);
 ```
 
-The color attribute is described in much the same way.
+색상 속성도 거의 같은 방식으로 설명됩니다.
 
-## Pipeline vertex input
+## 파이프라인 버텍스 입력
 
-We now need to set up the graphics pipeline to accept vertex data in this format
-by referencing the structures in `createGraphicsPipeline`. Find the
-`vertexInputInfo` struct and modify it to reference the two descriptions:
+이제 그래픽 파이프라인을 설정하여 이 형식의 버텍스 데이터를 수락하고 버텍스 셰이더로 전달할 수 있도록 `createGraphicsPipeline`에서 구조체를 참조해야 합니다. `vertexInputInfo` 구조체를 찾아 두 설명을 참조하도록 수정하세요:
 
 ```c++
 auto bindingDescription = Vertex::getBindingDescription();
@@ -216,12 +164,8 @@ vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
 vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 ```
 
-The pipeline is now ready to accept vertex data in the format of the `vertices`
-container and pass it on to our vertex shader. If you run the program now with
-validation layers enabled, you'll see that it complains that there is no vertex
-buffer bound to the binding. The next step is to create a vertex buffer and move
-the vertex data to it so the GPU is able to access it.
+파이프라인은 이제 `vertices` 컨테이너의 형식의 버텍스 데이터를 수락하고 버텍스 셰이더로 전달할 준비가 되었습니다. 이제 프로그램을 실행하면 유효성 검사 계층이 활성화되어 있고 바인딩에 버텍스 버퍼가 바인딩되어 있지 않다고 불평하는 것을 볼 수 있습니다. 다음 단계는 버텍스 버퍼를 생성하고 버텍스 데이터를 그곳으로 이동하여 GPU가 접근할 수 있도록 하는 것입니다.
 
-[C++ code](/code/18_vertex_input.cpp) /
-[Vertex shader](/code/18_shader_vertexbuffer.vert) /
-[Fragment shader](/code/18_shader_vertexbuffer.frag)
+[C++ 코드](/code/18_vertex_input.cpp) /
+[버텍스 셰이더](/code/18_shader_vertexbuffer.vert) /
+[프래그먼트 셰이더](/code/18_shader_vertexbuffer.frag)

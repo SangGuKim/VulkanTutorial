@@ -1,83 +1,34 @@
-# Introduction
+# 소개
 
-Over the course of the next few chapters we'll be setting up a graphics pipeline
-that is configured to draw our first triangle. The graphics pipeline is the
-sequence of operations that take the vertices and textures of your meshes all
-the way to the pixels in the render targets. A simplified overview is displayed
-below:
+앞으로 몇 장에 걸쳐 우리의 첫 번째 삼각형을 그리기 위한 그래픽스 파이프라인을 설정할 것입니다. 그래픽스 파이프라인은 메시의 정점과 텍스처를 가져와 렌더 타겟의 픽셀로 변환하는 일련의 작업들입니다. 아래는 간단히 도식화한 개요입니다:
 
 ![](/images/vulkan_simplified_pipeline.svg)
 
-The *input assembler* collects the raw vertex data from the buffers you specify
-and may also use an index buffer to repeat certain elements without having to
-duplicate the vertex data itself.
+*입력 어셈블러*는 지정된 버퍼에서 원시 정점 데이터를 수집하며, 인덱스 버퍼를 사용하여 정점 데이터 자체를 복제하지 않고도 특정 요소를 반복할 수 있습니다.
 
-The *vertex shader* is run for every vertex and generally applies
-transformations to turn vertex positions from model space to screen space. It
-also passes per-vertex data down the pipeline.
+*정점 셰이더*는 모든 정점에 대해 실행되며, 일반적으로 정점 위치를 모델 공간에서 스크린 공간으로 변환하는 변환을 적용합니다. 또한 정점별 데이터를 파이프라인 아래로 전달합니다.
 
-The *tessellation shaders* allow you to subdivide geometry based on certain
-rules to increase the mesh quality. This is often used to make surfaces like
-brick walls and staircases look less flat when they are nearby.
+*테셀레이션 셰이더*는 특정 규칙에 따라 기하를 세분화하여 메시 품질을 향상시킬 수 있게 해줍니다. 이는 주로 벽돌 벽이나 계단과 같은 표면이 가까이 있을 때 덜 평평해 보이게 만드는 데 사용됩니다.
 
-The *geometry shader* is run on every primitive (triangle, line, point) and can
-discard it or output more primitives than came in. This is similar to the
-tessellation shader, but much more flexible. However, it is not used much in
-today's applications because the performance is not that good on most graphics
-cards except for Intel's integrated GPUs.
+*기하 셰이더*는 모든 프리미티브(삼각형, 선, 점)에 대해 실행되며, 이를 폐기하거나 입력된 것보다 더 많은 프리미티브를 출력할 수 있습니다. 이는 테셀레이션 셰이더와 비슷하지만 훨씬 더 유연합니다. 하지만 인텔의 통합 GPU를 제외한 대부분의 그래픽 카드에서 성능이 좋지 않기 때문에 오늘날의 애플리케이션에서는 많이 사용되지 않습니다.
 
-The *rasterization* stage discretizes the primitives into *fragments*. These are
-the pixel elements that they fill on the framebuffer. Any fragments that fall
-outside the screen are discarded and the attributes outputted by the vertex
-shader are interpolated across the fragments, as shown in the figure. Usually
-the fragments that are behind other primitive fragments are also discarded here
-because of depth testing.
+*래스터화* 단계는 프리미티브를 *프래그먼트*로 이산화합니다. 이들은 프레임버퍼에서 채우는 픽셀 요소입니다. 화면 밖에 있는 프래그먼트는 모두 폐기되며, 정점 셰이더가 출력한 속성들은 그림에서 보이는 것처럼 프래그먼트들 사이에서 보간됩니다. 일반적으로 깊이 테스트로 인해 다른 프리미티브 프래그먼트 뒤에 있는 프래그먼트들도 이 단계에서 폐기됩니다.
 
-The *fragment shader* is invoked for every fragment that survives and determines
-which framebuffer(s) the fragments are written to and with which color and depth
-values. It can do this using the interpolated data from the vertex shader, which
-can include things like texture coordinates and normals for lighting.
+*프래그먼트 셰이더*는 살아남은 모든 프래그먼트에 대해 호출되며, 프래그먼트가 어떤 프레임버퍼에 어떤 색상과 깊이 값으로 쓰여질지를 결정합니다. 이는 정점 셰이더에서 보간된 데이터를 사용하여 수행되며, 여기에는 텍스처 좌표와 조명을 위한 법선 등이 포함될 수 있습니다.
 
-The *color blending* stage applies operations to mix different fragments that
-map to the same pixel in the framebuffer. Fragments can simply overwrite each
-other, add up or be mixed based upon transparency.
+*색상 블렌딩* 단계는 프레임버퍼의 같은 픽셀에 매핑되는 서로 다른 프래그먼트들을 혼합하는 작업을 적용합니다. 프래그먼트들은 서로를 단순히 덮어쓰거나, 더해지거나, 투명도를 기반으로 혼합될 수 있습니다.
 
-Stages with a green color are known as *fixed-function* stages. These stages
-allow you to tweak their operations using parameters, but the way they work is
-predefined.
+녹색으로 표시된 단계들은 *고정 기능* 단계로 알려져 있습니다. 이러한 단계들은 매개변수를 사용하여 작업을 조정할 수는 있지만, 작동 방식은 미리 정의되어 있습니다.
 
-Stages with an orange color on the other hand are `programmable`, which means
-that you can upload your own code to the graphics card to apply exactly the
-operations you want. This allows you to use fragment shaders, for example, to
-implement anything from texturing and lighting to ray tracers. These programs
-run on many GPU cores simultaneously to process many objects, like vertices and
-fragments in parallel.
+반면 주황색으로 표시된 단계들은 *프로그래밍 가능*하며, 이는 원하는 작업을 정확히 수행하기 위해 직접 작성한 코드를 그래픽 카드에 업로드할 수 있다는 의미입니다. 이를 통해 프래그먼트 셰이더를 사용하여 텍스처링과 조명부터 레이 트레이서까지 다양한 기능을 구현할 수 있습니다. 이러한 프로그램들은 많은 GPU 코어에서 동시에 실행되어 정점이나 프래그먼트와 같은 많은 객체들을 병렬로 처리합니다.
 
-If you've used older APIs like OpenGL and Direct3D before, then you'll be used
-to being able to change any pipeline settings at will with calls like
-`glBlendFunc` and `OMSetBlendState`. The graphics pipeline in Vulkan is almost
-completely immutable, so you must recreate the pipeline from scratch if you want
-to change shaders, bind different framebuffers or change the blend function. The
-disadvantage is that you'll have to create a number of pipelines that represent
-all of the different combinations of states you want to use in your rendering
-operations. However, because all of the operations you'll be doing in the
-pipeline are known in advance, the driver can optimize for it much better.
+OpenGL이나 Direct3D와 같은 이전 API를 사용해 보셨다면, `glBlendFunc`나 `OMSetBlendState`와 같은 호출로 언제든지 파이프라인 설정을 변경할 수 있었을 것입니다. Vulkan의 그래픽스 파이프라인은 거의 완전히 불변이어서, 셰이더를 변경하거나, 다른 프레임버퍼를 바인딩하거나, 블렌드 함수를 변경하려면 파이프라인을 처음부터 다시 생성해야 합니다. 이는 렌더링 작업에서 사용하고자 하는 모든 상태 조합을 나타내는 여러 파이프라인을 생성해야 한다는 단점이 있습니다. 하지만 파이프라인에서 수행할 모든 작업을 미리 알 수 있기 때문에, 드라이버가 이를 훨씬 더 잘 최적화할 수 있습니다.
 
-Some of the programmable stages are optional based on what you intend to do. For
-example, the tessellation and geometry stages can be disabled if you are just
-drawing simple geometry. If you are only interested in depth values then you can
-disable the fragment shader stage, which is useful for [shadow map](https://en.wikipedia.org/wiki/Shadow_mapping)
-generation.
+프로그래밍 가능한 단계 중 일부는 의도하는 작업에 따라 선택적으로 사용할 수 있습니다. 예를 들어, 단순한 기하를 그리는 경우에는 테셀레이션과 기하 단계를 비활성화할 수 있습니다. 깊이 값에만 관심이 있다면 프래그먼트 셰이더 단계를 비활성화할 수 있는데, 이는 [섀도우 맵](https://en.wikipedia.org/wiki/Shadow_mapping) 생성에 유용합니다.
 
-In the next chapter we'll first create the two programmable stages required to
-put a triangle onto the screen: the vertex shader and fragment shader. The
-fixed-function configuration like blending mode, viewport, rasterization will be
-set up in the chapter after that. The final part of setting up the graphics
-pipeline in Vulkan involves the specification of input and output framebuffers.
+다음 장에서는 먼저 화면에 삼각형을 그리는 데 필요한 두 가지 프로그래밍 가능한 단계인 정점 셰이더와 프래그먼트 셰이더를 생성할 것입니다. 블렌딩 모드, 뷰포트, 래스터화와 같은 고정 기능 설정은 그 다음 장에서 설정할 것입니다. Vulkan에서 그래픽스 파이프라인 설정의 마지막 부분은 입력 및 출력 프레임버퍼의 명세를 포함합니다.
 
-Create a `createGraphicsPipeline` function that is called right after
-`createImageViews` in `initVulkan`. We'll work on this function throughout the
-following chapters.
+`initVulkan`의 `createImageViews` 바로 다음에 호출되는 `createGraphicsPipeline` 함수를 생성하세요. 앞으로 몇 장에 걸쳐 이 함수를 작성할 것입니다.
 
 ```c++
 void initVulkan() {
@@ -98,4 +49,4 @@ void createGraphicsPipeline() {
 }
 ```
 
-[C++ code](/code/08_graphics_pipeline.cpp)
+[C++ 코드](/code/08_graphics_pipeline.cpp)

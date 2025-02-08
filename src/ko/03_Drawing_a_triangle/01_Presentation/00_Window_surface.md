@@ -1,50 +1,24 @@
-# Window surface
+# 윈도우 서피스
 
-Since Vulkan is a platform agnostic API, it can not interface directly with the
-window system on its own. To establish the connection between Vulkan and the
-window system to present results to the screen, we need to use the WSI (Window
-System Integration) extensions. In this chapter we'll discuss the first one,
-which is `VK_KHR_surface`. It exposes a `VkSurfaceKHR` object that represents an
-abstract type of surface to present rendered images to. The surface in our
-program will be backed by the window that we've already opened with GLFW.
+Vulkan은 플랫폼에 독립적인 API이므로, 직접 윈도우 시스템과 인터페이스할 수 없습니다. Vulkan과 윈도우 시스템 간의 연결을 설정하여 화면에 결과를 표시하기 위해서는 WSI(Window System Integration) extension을 사용해야 합니다. 이 장에서는 첫 번째로 `VK_KHR_surface`를 다룰 것입니다. 이는 렌더링된 이미지를 표시할 추상 타입의 서피스를 나타내는 `VkSurfaceKHR` 객체를 제공합니다. 우리 프로그램의 서피스는 GLFW로 이미 열어둔 윈도우가 뒷받침할 것입니다.
 
-The `VK_KHR_surface` extension is an instance level extension and we've actually
-already enabled it, because it's included in the list returned by
-`glfwGetRequiredInstanceExtensions`. The list also includes some other WSI
-extensions that we'll use in the next couple of chapters.
+`VK_KHR_surface` extension은 인스턴스 레벨 extension이며, 이미 활성화되어 있습니다. `glfwGetRequiredInstanceExtensions`가 반환하는 목록에 포함되어 있기 때문입니다. 이 목록에는 다음 몇 장에서 사용할 다른 WSI extension들도 포함되어 있습니다.
 
-The window surface needs to be created right after the instance creation,
-because it can actually influence the physical device selection. The reason we
-postponed this is because window surfaces are part of the larger topic of
-render targets and presentation for which the explanation would have cluttered
-the basic setup. It should also be noted that window surfaces are an entirely
-optional component in Vulkan, if you just need off-screen rendering. Vulkan
-allows you to do that without hacks like creating an invisible window
-(necessary for OpenGL).
+윈도우 서피스는 인스턴스 생성 직후에 생성되어야 합니다. 물리 장치 선택에 영향을 미칠 수 있기 때문입니다. 이를 미룬 이유는 윈도우 서피스가 렌더 타겟과 프레젠테이션이라는 더 큰 주제의 일부이며, 이에 대한 설명이 기본 설정을 복잡하게 만들었을 것이기 때문입니다. 또한 윈도우 서피스는 Vulkan에서 완전히 선택적인 컴포넌트라는 점도 주목할 만합니다. 오프스크린 렌더링만 필요한 경우에는 필요하지 않습니다. Vulkan에서는 OpenGL에서 필요했던 것처럼 보이지 않는 윈도우를 만드는 등의 해킹 없이도 이것이 가능합니다.
 
-## Window surface creation
+## 윈도우 서피스 생성
 
-Start by adding a `surface` class member right below the debug callback.
+디버그 콜백 바로 아래에 `surface` 클래스 멤버를 추가하는 것으로 시작합니다.
 
 ```c++
 VkSurfaceKHR surface;
 ```
 
-Although the `VkSurfaceKHR` object and its usage is platform agnostic, its
-creation isn't because it depends on window system details. For example, it
-needs the `HWND` and `HMODULE` handles on Windows. Therefore there is a
-platform-specific addition to the extension, which on Windows is called
-`VK_KHR_win32_surface` and is also automatically included in the list from
-`glfwGetRequiredInstanceExtensions`.
+`VkSurfaceKHR` 객체와 그 사용은 플랫폼에 독립적이지만, 생성은 그렇지 않습니다. 윈도우 시스템 세부 사항에 의존하기 때문입니다. 예를 들어, Windows에서는 `HWND`와 `HMODULE` 핸들이 필요합니다. 따라서 플랫폼별 extension이 있으며, Windows에서는 `VK_KHR_win32_surface`라고 하며 이 역시 `glfwGetRequiredInstanceExtensions`의 목록에 자동으로 포함됩니다.
 
-I will demonstrate how this platform specific extension can be used to create a
-surface on Windows, but we won't actually use it in this tutorial. It doesn't
-make any sense to use a library like GLFW and then proceed to use
-platform-specific code anyway. GLFW actually has `glfwCreateWindowSurface` that
-handles the platform differences for us. Still, it's good to see what it does
-behind the scenes before we start relying on it.
+Windows에서 서피스를 생성하는 데 이 플랫폼별 extension을 어떻게 사용하는지 보여드리겠지만, 이 튜토리얼에서는 실제로 사용하지는 않을 것입니다. GLFW 같은 라이브러리를 사용하면서 다시 플랫폼별 코드를 사용하는 것은 의미가 없기 때문입니다. GLFW는 실제로 플랫폼 차이를 처리해주는 `glfwCreateWindowSurface`를 제공합니다. 그래도 이를 사용하기 전에 내부에서 어떤 일이 일어나는지 보는 것이 좋습니다.
 
-To access native platform functions, you need to update the includes at the top:
+네이티브 플랫폼 함수에 접근하려면 상단의 include를 다음과 같이 업데이트해야 합니다:
 
 ```c++
 #define VK_USE_PLATFORM_WIN32_KHR
@@ -54,10 +28,7 @@ To access native platform functions, you need to update the includes at the top:
 #include <GLFW/glfw3native.h>
 ```
 
-Because a window surface is a Vulkan object, it comes with a
-`VkWin32SurfaceCreateInfoKHR` struct that needs to be filled in. It has two
-important parameters: `hwnd` and `hinstance`. These are the handles to the
-window and the process.
+윈도우 서피스는 Vulkan 객체이므로, 채워야 할 `VkWin32SurfaceCreateInfoKHR` 구조체가 함께 제공됩니다. 이는 `hwnd`와 `hinstance` 두 가지 중요한 매개변수를 가집니다. 이들은 윈도우와 프로세스의 핸들입니다.
 
 ```c++
 VkWin32SurfaceCreateInfoKHR createInfo{};
@@ -66,11 +37,9 @@ createInfo.hwnd = glfwGetWin32Window(window);
 createInfo.hinstance = GetModuleHandle(nullptr);
 ```
 
-The `glfwGetWin32Window` function is used to get the raw `HWND` from the GLFW
-window object. The `GetModuleHandle` call returns the `HINSTANCE` handle of the
-current process.
+`glfwGetWin32Window` 함수는 GLFW 윈도우 객체에서 원시 `HWND`를 가져오는 데 사용됩니다. `GetModuleHandle` 호출은 현재 프로세스의 `HINSTANCE` 핸들을 반환합니다.
 
-After that the surface can be created with `vkCreateWin32SurfaceKHR`, which includes a parameter for the instance, surface creation details, custom allocators and the variable for the surface handle to be stored in. Technically this is a WSI extension function, but it is so commonly used that the standard Vulkan loader includes it, so unlike other extensions you don't need to explicitly load it.
+그 후 `vkCreateWin32SurfaceKHR`로 서피스를 생성할 수 있으며, 여기에는 인스턴스, 서피스 생성 세부 정보, 커스텀 할당자, 그리고 서피스 핸들을 저장할 변수에 대한 매개변수가 포함됩니다. 기술적으로 이는 WSI extension 함수이지만 매우 일반적으로 사용되어 표준 Vulkan 로더에 포함되어 있으므로, 다른 extension과 달리 명시적으로 로드할 필요가 없습니다.
 
 ```c++
 if (vkCreateWin32SurfaceKHR(instance, &createInfo, nullptr, &surface) != VK_SUCCESS) {
@@ -78,14 +47,9 @@ if (vkCreateWin32SurfaceKHR(instance, &createInfo, nullptr, &surface) != VK_SUCC
 }
 ```
 
-The process is similar for other platforms like Linux, where
-`vkCreateXcbSurfaceKHR` takes an XCB connection and window as creation details
-with X11.
+이 과정은 Linux와 같은 다른 플랫폼에서도 비슷합니다. X11에서는 `vkCreateXcbSurfaceKHR`가 XCB 연결과 윈도우를 생성 세부 정보로 받습니다.
 
-The `glfwCreateWindowSurface` function performs exactly this operation with a
-different implementation for each platform. We'll now integrate it into our
-program. Add a function `createSurface` to be called from `initVulkan` right
-after instance creation and `setupDebugMessenger`.
+`glfwCreateWindowSurface` 함수는 각 플랫폼마다 다른 구현으로 정확히 이 작업을 수행합니다. 이제 이를 우리 프로그램에 통합해보겠습니다. 인스턴스 생성과 `setupDebugMessenger` 직후 `initVulkan`에서 호출될 `createSurface` 함수를 추가합니다.
 
 ```c++
 void initVulkan() {
@@ -101,8 +65,7 @@ void createSurface() {
 }
 ```
 
-The GLFW call takes simple parameters instead of a struct which makes the
-implementation of the function very straightforward:
+GLFW 호출은 구조체 대신 간단한 매개변수를 받으므로 함수의 구현이 매우 간단합니다:
 
 ```c++
 void createSurface() {
@@ -112,35 +75,24 @@ void createSurface() {
 }
 ```
 
-The parameters are the `VkInstance`, GLFW window pointer, custom allocators and
-pointer to `VkSurfaceKHR` variable. It simply passes through the `VkResult` from
-the relevant platform call. GLFW doesn't offer a special function for destroying
-a surface, but that can easily be done through the original API:
+매개변수는 `VkInstance`, GLFW 윈도우 포인터, 커스텀 할당자, 그리고 `VkSurfaceKHR` 변수에 대한 포인터입니다. 단순히 관련 플랫폼 호출의 `VkResult`를 전달합니다. GLFW는 서피스를 파괴하기 위한 특별한 함수를 제공하지 않지만, 원래 API를 통해 쉽게 할 수 있습니다:
 
 ```c++
 void cleanup() {
-        ...
-        vkDestroySurfaceKHR(instance, surface, nullptr);
-        vkDestroyInstance(instance, nullptr);
-        ...
-    }
+    ...
+    vkDestroySurfaceKHR(instance, surface, nullptr);
+    vkDestroyInstance(instance, nullptr);
+    ...
+}
 ```
 
-Make sure that the surface is destroyed before the instance.
+서피스가 인스턴스보다 먼저 파괴되도록 해야 합니다.
 
-## Querying for presentation support
+## 프레젠테이션 지원 쿼리하기
 
-Although the Vulkan implementation may support window system integration, that
-does not mean that every device in the system supports it. Therefore we need to
-extend `isDeviceSuitable` to ensure that a device can present images to the
-surface we created. Since the presentation is a queue-specific feature, the
-problem is actually about finding a queue family that supports presenting to the
-surface we created.
+Vulkan 구현이 윈도우 시스템 통합을 지원하더라도, 시스템의 모든 장치가 이를 지원하는 것은 아닙니다. 따라서 `isDeviceSuitable`을 확장하여 장치가 우리가 생성한 서피스에 이미지를 표시할 수 있는지 확인해야 합니다. 프레젠테이션은 큐별 기능이므로, 실제로는 우리가 생성한 서피스에 대한 프레젠테이션을 지원하는 큐 패밀리를 찾는 문제입니다.
 
-It's actually possible that the queue families supporting drawing commands and
-the ones supporting presentation do not overlap. Therefore we have to take into
-account that there could be a distinct presentation queue by modifying the
-`QueueFamilyIndices` structure:
+드로잉 명령을 지원하는 큐 패밀리와 프레젠테이션을 지원하는 큐 패밀리가 겹치지 않을 수 있습니다. 따라서 `QueueFamilyIndices` 구조체를 수정하여 별도의 프레젠테이션 큐가 있을 수 있음을 고려해야 합니다:
 
 ```c++
 struct QueueFamilyIndices {
@@ -153,19 +105,14 @@ struct QueueFamilyIndices {
 };
 ```
 
-Next, we'll modify the `findQueueFamilies` function to look for a queue family
-that has the capability of presenting to our window surface. The function to
-check for that is `vkGetPhysicalDeviceSurfaceSupportKHR`, which takes the
-physical device, queue family index and surface as parameters. Add a call to it
-in the same loop as the `VK_QUEUE_GRAPHICS_BIT`:
+다음으로, `findQueueFamilies` 함수를 수정하여 우리의 윈도우 서피스에 프레젠테이션할 수 있는 큐 패밀리를 찾아보겠습니다. 이를 확인하는 함수는 `vkGetPhysicalDeviceSurfaceSupportKHR`이며, 물리 장치, 큐 패밀리 인덱스, 서피스를 매개변수로 받습니다. `VK_QUEUE_GRAPHICS_BIT`와 같은 루프에 이 호출을 추가합니다:
 
 ```c++
 VkBool32 presentSupport = false;
 vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
 ```
 
-Then simply check the value of the boolean and store the presentation family
-queue index:
+그런 다음 boolean 값을 확인하고 프레젠테이션 패밀리 큐 인덱스를 저장합니다:
 
 ```c++
 if (presentSupport) {
@@ -173,25 +120,17 @@ if (presentSupport) {
 }
 ```
 
-Note that it's very likely that these end up being the same queue family after
-all, but throughout the program we will treat them as if they were separate
-queues for a uniform approach. Nevertheless, you could add logic to explicitly
-prefer a physical device that supports drawing and presentation in the same
-queue for improved performance.
+결국 이들이 같은 큐 패밀리가 될 가능성이 매우 높지만, 프로그램 전체에서 일관된 접근을 위해 별도의 큐인 것처럼 다룰 것입니다. 그럼에도 성능 향상을 위해 드로잉과 프레젠테이션을 같은 큐에서 지원하는 물리 장치를 명시적으로 선호하는 로직을 추가할 수 있습니다.
 
-## Creating the presentation queue
+## 프레젠테이션 큐 생성하기
 
-The one thing that remains is modifying the logical device creation procedure to
-create the presentation queue and retrieve the `VkQueue` handle. Add a member
-variable for the handle:
+남은 것은 논리 장치 생성 절차를 수정하여 프레젠테이션 큐를 생성하고 `VkQueue` 핸들을 검색하는 것입니다. 핸들을 위한 멤버 변수를 추가합니다:
 
 ```c++
 VkQueue presentQueue;
 ```
 
-Next, we need to have multiple `VkDeviceQueueCreateInfo` structs to create a
-queue from both families. An elegant way to do that is to create a set of all
-unique queue families that are necessary for the required queues:
+다음으로, 두 패밀리 모두에서 큐를 생성하기 위해 여러 `VkDeviceQueueCreateInfo` 구조체가 필요합니다. 이를 위한 우아한 방법은 필요한 큐를 위한 모든 고유한 큐 패밀리의 집합을 만드는 것입니다:
 
 ```c++
 #include <set>
@@ -214,22 +153,19 @@ for (uint32_t queueFamily : uniqueQueueFamilies) {
 }
 ```
 
-And modify `VkDeviceCreateInfo` to point to the vector:
+그리고 `VkDeviceCreateInfo`를 수정하여 벡터를 가리키도록 합니다:
 
 ```c++
 createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
 createInfo.pQueueCreateInfos = queueCreateInfos.data();
 ```
 
-If the queue families are the same, then we only need to pass its index once.
-Finally, add a call to retrieve the queue handle:
+큐 패밀리가 같다면 인덱스를 한 번만 전달하면 됩니다. 마지막으로, 큐 핸들을 검색하는 호출을 추가합니다:
 
 ```c++
 vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
 ```
 
-In case the queue families are the same, the two handles will most likely have
-the same value now. In the next chapter we're going to look at swap chains and
-how they give us the ability to present images to the surface.
+큐 패밀리가 같다면 두 핸들은 이제 같은 값을 가질 가능성이 높습니다. 다음 장에서는 스왑 체인과 이것이 어떻게 서피스에 이미지를 표시할 수 있게 해주는지 살펴보겠습니다.
 
-[C++ code](/code/05_window_surface.cpp)
+[C++ 코드](/code/05_window_surface.cpp)

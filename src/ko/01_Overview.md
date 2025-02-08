@@ -1,234 +1,98 @@
-# Overview
+# 개요
 
-This chapter will start off with an introduction of Vulkan and the problems
-it addresses. After that we're going to look at the ingredients that are
-required for the first triangle. This will give you a big picture to place each
-of the subsequent chapters in. We will conclude by covering the structure of the
-Vulkan API and the general usage patterns.
+이 챕터에서는 Vulkan과 이것이 해결하고자 하는 문제들에 대한 소개로 시작하겠습니다. 그 다음에는 첫 삼각형을 그리는 데 필요한 요소들을 살펴볼 것입니다. 이를 통해 이후의 각 챕터들을 이해하는 데 도움이 될 큰 그림을 제공할 것입니다. 마지막으로 Vulkan API의 구조와 일반적인 사용 패턴을 다룰 것입니다.
 
-## Origin of Vulkan
+## Vulkan의 기원
 
-Just like the previous graphics APIs, Vulkan is designed as a cross-platform
-abstraction over [GPUs](https://en.wikipedia.org/wiki/Graphics_processing_unit).
-The problem with most of these APIs is that the era in which they were designed
-featured graphics hardware that was mostly limited to configurable fixed
-functionality. Programmers had to provide the vertex data in a standard format
-and were at the mercy of the GPU manufacturers with regards to lighting and
-shading options.
+이전의 그래픽스 API들처럼, Vulkan도 [GPU](https://en.wikipedia.org/wiki/Graphics_processing_unit)에 대한 크로스 플랫폼 추상화로 설계되었습니다. 이러한 API들 대부분의 문제는 설계된 시대의 그래픽스 하드웨어가 대부분 설정 가능한 고정 기능으로 제한되어 있었다는 점입니다. 프로그래머들은 정해진 형식으로 버텍스 데이터를 제공해야 했고, 조명과 셰이딩 옵션에 관해서는 GPU 제조사의 결정에 따를 수밖에 없었습니다.
 
-As graphics card architectures matured, they started offering more and more
-programmable functionality. All this new functionality had to be integrated with
-the existing APIs somehow. This resulted in less than ideal abstractions and a
-lot of guesswork on the graphics driver side to map the programmer's intent to
-the modern graphics architectures. That's why there are so many driver updates
-for improving the performance in games, sometimes by significant margins.
-Because of the complexity of these drivers, application developers also need to
-deal with inconsistencies between vendors, like the syntax that is accepted for
-[shaders](https://en.wikipedia.org/wiki/Shader). Aside from these new features,
-the past decade also saw an influx of mobile devices with powerful graphics
-hardware. These mobile GPUs have different architectures based on their energy
-and space requirements. One such example is [tiled rendering](https://en.wikipedia.org/wiki/Tiled_rendering),
-which would benefit from improved performance by offering the programmer more
-control over this functionality. Another limitation originating from the age of
-these APIs is limited multi-threading support, which can result in a bottleneck
-on the CPU side.
+그래픽 카드 아키텍처가 발전하면서, 점점 더 많은 프로그래밍 가능한 기능을 제공하기 시작했습니다. 이 모든 새로운 기능들을 어떻게든 기존 API에 통합해야 했습니다. 이로 인해 이상적이지 않은 추상화가 생기고, 프로그래머의 의도를 현대적인 그래픽스 아키텍처에 매핑하기 위해 그래픽스 드라이버 측에서 많은 추측 작업을 해야 했습니다. 이것이 게임의 성능을 때로는 상당한 폭으로 개선하는 드라이버 업데이트가 많은 이유입니다. 이러한 드라이버의 복잡성 때문에, 애플리케이션 개발자들은 [셰이더](https://en.wikipedia.org/wiki/Shader)에서 허용되는 문법과 같은 벤더 간의 불일치도 처리해야 합니다. 이러한 새로운 기능들 외에도, 지난 10년 동안 강력한 그래픽스 하드웨어를 탑재한 모바일 기기들이 대거 등장했습니다. 이러한 모바일 GPU들은 에너지와 공간 요구사항에 따라 다른 아키텍처를 가지고 있습니다. 한 가지 예로 [타일드 렌더링](https://en.wikipedia.org/wiki/Tiled_rendering)이 있는데, 이 기능에 대한 더 많은 제어권을 프로그래머에게 제공함으로써 성능 향상의 이점을 얻을 수 있을 것입니다. 이러한 API들의 시대에서 비롯된 또 다른 제한사항은 제한된 멀티스레딩 지원으로, CPU 측면에서 병목 현상이 발생할 수 있습니다.
 
-Vulkan solves these problems by being designed from scratch for modern graphics
-architectures. It reduces driver overhead by allowing programmers to clearly
-specify their intent using a more verbose API, and allows multiple threads to
-create and submit commands in parallel. It reduces inconsistencies in shader
-compilation by switching to a standardized byte code format with a single
-compiler. Lastly, it acknowledges the general purpose processing capabilities of
-modern graphics cards by unifying the graphics and compute functionality into a
-single API.
+Vulkan은 현대적인 그래픽스 아키텍처를 위해 처음부터 새로 설계됨으로써 이러한 문제들을 해결합니다. 더 자세한 API를 사용하여 프로그래머가 자신의 의도를 명확하게 지정할 수 있게 함으로써 드라이버 오버헤드를 줄이고, 여러 스레드가 병렬로 명령을 생성하고 제출할 수 있게 합니다. 단일 컴파일러로 표준화된 바이트코드 형식을 사용함으로써 셰이더 컴파일의 불일치를 줄입니다. 마지막으로, 그래픽스와 컴퓨트 기능을 하나의 API로 통합함으로써 현대 그래픽 카드의 범용 처리 능력을 인정합니다.
 
-## What it takes to draw a triangle
+## 삼각형을 그리는 데 필요한 것들
 
-We'll now look at an overview of all the steps it takes to render a triangle in
-a well-behaved Vulkan program. All of the concepts introduced here will be
-elaborated on in the next chapters. This is just to give you a big picture to
-relate all of the individual components to.
+이제 제대로 작동하는 Vulkan 프로그램에서 삼각형을 렌더링하는 데 필요한 모든 단계들을 개괄적으로 살펴보겠습니다. 여기서 소개되는 모든 개념들은 다음 챕터들에서 자세히 설명될 것입니다. 이것은 단지 개별 구성 요소들을 전체적으로 이해하는 데 도움이 될 큰 그림을 제공하기 위한 것입니다.
 
-### Step 1 - Instance and physical device selection
+### 단계 1 - 인스턴스와 물리 장치 선택
 
-A Vulkan application starts by setting up the Vulkan API through a `VkInstance`.
-An instance is created by describing your application and any API extensions you
-will be using. After creating the instance, you can query for Vulkan supported
-hardware and select one or more `VkPhysicalDevice`s to use for operations. You
-can query for properties like VRAM size and device capabilities to select
-desired devices, for example to prefer using dedicated graphics cards.
+Vulkan 애플리케이션은 `VkInstance`를 통해 Vulkan API를 설정하는 것으로 시작합니다. 인스턴스는 애플리케이션과 사용할 API 확장을 설명하여 생성됩니다. 인스턴스를 생성한 후에는 Vulkan을 지원하는 하드웨어를 조회하고 작업에 사용할 하나 이상의 `VkPhysicalDevice`를 선택할 수 있습니다. VRAM 크기와 장치 기능과 같은 속성을 조회하여 원하는 장치를 선택할 수 있습니다. 예를 들어 전용 그래픽 카드를 선호하도록 할 수 있습니다.
 
-### Step 2 - Logical device and queue families
+### 단계 2 - 논리 장치와 큐 패밀리
 
-After selecting the right hardware device to use, you need to create a VkDevice
-(logical device), where you describe more specifically which
-VkPhysicalDeviceFeatures you will be using, like multi viewport rendering and
-64 bit floats. You also need to specify which queue families you would like to
-use. Most operations performed with Vulkan, like draw commands and memory
-operations, are asynchronously executed by submitting them to a VkQueue. Queues
-are allocated from queue families, where each queue family supports a specific
-set of operations in its queues. For example, there could be separate queue
-families for graphics, compute and memory transfer operations. The availability
-of queue families could also be used as a distinguishing factor in physical
-device selection. It is possible for a device with Vulkan support to not offer
-any graphics functionality, however all graphics cards with Vulkan support today
-will generally support all queue operations that we're interested in.
+사용할 적절한 하드웨어 장치를 선택한 후에는 VkDevice(논리 장치)를 생성해야 하는데, 여기서 멀티 뷰포트 렌더링과 64비트 부동소수점과 같이 사용할 VkPhysicalDeviceFeatures를 더 구체적으로 설명합니다. 또한 사용하고자 하는 큐 패밀리를 지정해야 합니다. 드로우 명령과 메모리 작업과 같은 Vulkan에서 수행되는 대부분의 작업은 VkQueue에 제출하여 비동기적으로 실행됩니다. 큐는 큐 패밀리에서 할당되며, 각 큐 패밀리는 해당 큐에서 특정 작업 집합을 지원합니다. 예를 들어, 그래픽스, 컴퓨트, 메모리 전송 작업을 위한 별도의 큐 패밀리가 있을 수 있습니다. 큐 패밀리의 가용성은 물리 장치 선택의 구별 요소로도 사용될 수 있습니다. Vulkan을 지원하는 장치가 그래픽스 기능을 전혀 제공하지 않을 수도 있지만, 오늘날 Vulkan을 지원하는 모든 그래픽 카드는 일반적으로 우리가 관심 있는 모든 큐 작업을 지원합니다.
 
-### Step 3 - Window surface and swap chain
+### 단계 3 - 윈도우 서피스와 스왑 체인
 
-Unless you're only interested in offscreen rendering, you will need to create a
-window to present rendered images to. Windows can be created with the native
-platform APIs or libraries like [GLFW](http://www.glfw.org/) and [SDL](https://www.libsdl.org/).
-We will be using GLFW in this tutorial, but more about that in the next chapter.
+오프스크린 렌더링에만 관심이 있는 것이 아니라면, 렌더링된 이미지를 표시할 윈도우를 생성해야 합니다. 윈도우는 네이티브 플랫폼 API나 [GLFW](http://www.glfw.org/), [SDL](https://www.libsdl.org/)과 같은 라이브러리를 사용하여 생성할 수 있습니다. 이 튜토리얼에서는 GLFW를 사용할 것이지만, 이에 대해서는 다음 챕터에서 더 자세히 다룰 것입니다.
 
-We need two more components to actually render to a window: a window surface
-(VkSurfaceKHR) and a swap chain (VkSwapchainKHR). Note the `KHR` postfix, which
-means that these objects are part of a Vulkan extension. The Vulkan API itself
-is completely platform agnostic, which is why we need to use the standardized
-WSI (Window System Interface) extension to interact with the window manager. The
-surface is a cross-platform abstraction over windows to render to and is
-generally instantiated by providing a reference to the native window handle, for
-example `HWND` on Windows. Luckily, the GLFW library has a built-in function to
-deal with the platform specific details of this.
+윈도우에 실제로 렌더링하기 위해서는 두 가지 구성 요소가 더 필요합니다: 윈도우 서피스(VkSurfaceKHR)와 스왑 체인(VkSwapchainKHR)입니다. `KHR` 접미사에 주목하세요. 이는 이러한 객체들이 Vulkan 확장의 일부임을 의미합니다. Vulkan API 자체는 완전히 플랫폼에 구애받지 않기 때문에, 윈도우 관리자와 상호 작용하기 위해 표준화된 WSI(Window System Interface) 확장을 사용해야 합니다. 서피스는 렌더링할 윈도우에 대한 크로스 플랫폼 추상화이며, 일반적으로 네이티브 윈도우 핸들(예: Windows의 `HWND`)에 대한 참조를 제공하여 인스턴스화됩니다. 다행히도 GLFW 라이브러리에는 이러한 플랫폼별 세부 사항을 처리하는 내장 함수가 있습니다.
 
-The swap chain is a collection of render targets. Its basic purpose is to ensure
-that the image that we're currently rendering to is different from the one that
-is currently on the screen. This is important to make sure that only complete
-images are shown. Every time we want to draw a frame we have to ask the swap
-chain to provide us with an image to render to. When we've finished drawing a
-frame, the image is returned to the swap chain for it to be presented to the
-screen at some point. The number of render targets and conditions for presenting
-finished images to the screen depends on the present mode. Common present modes
-are  double buffering (vsync) and triple buffering. We'll look into these in the
-swap chain creation chapter.
+스왑 체인은 렌더 타겟의 집합입니다. 기본적인 목적은 현재 렌더링 중인 이미지가 현재 화면에 표시되고 있는 이미지와 다르도록 보장하는 것입니다. 이는 완성된 이미지만 표시되도록 하는 데 중요합니다. 프레임을 그리고 싶을 때마다 스왑 체인에 렌더링할 이미지를 요청해야 합니다. 프레임 그리기를 마치면 이미지는 스왑 체인으로 반환되어 어느 시점에 화면에 표시됩니다. 렌더 타겟의 수와 완성된 이미지를 화면에 표시하는 조건은 프레젠트 모드에 따라 다릅니다. 일반적인 프레젠트 모드로는 더블 버퍼링(vsync)과 트리플 버퍼링이 있습니다. 이에 대해서는 스왑 체인 생성 챕터에서 살펴볼 것입니다.
 
-Some platforms allow you to render directly to a display without interacting with any window manager through the `VK_KHR_display` and `VK_KHR_display_swapchain` extensions. These allow you to create a surface that represents the entire screen and could be used to implement your own window manager, for example.
+일부 플랫폼에서는 `VK_KHR_display`와 `VK_KHR_display_swapchain` 확장을 통해 윈도우 관리자와 상호 작용하지 않고 직접 디스플레이에 렌더링할 수 있습니다. 이를 통해 전체 화면을 나타내는 서피스를 생성할 수 있으며, 예를 들어 자체 윈도우 관리자를 구현하는 데 사용할 수 있습니다.
 
-### Step 4 - Image views and framebuffers
+### 단계 4 - 이미지 뷰와 프레임버퍼
 
-To draw to an image acquired from the swap chain, we have to wrap it into a
-VkImageView and VkFramebuffer. An image view references a specific part of an
-image to be used, and a framebuffer references image views that are to be used
-for color, depth and stencil targets. Because there could be many different
-images in the swap chain, we'll preemptively create an image view and
-framebuffer for each of them and select the right one at draw time.
+스왑 체인에서 가져온 이미지에 그리기 위해서는 VkImageView와 VkFramebuffer로 래핑해야 합니다. 이미지 뷰는 사용할 이미지의 특정 부분을 참조하고, 프레임버퍼는 컬러, 깊이, 스텐실 타겟으로 사용할 이미지 뷰를 참조합니다. 스왑 체인에 많은 다른 이미지들이 있을 수 있으므로, 각각에 대한 이미지 뷰와 프레임버퍼를 미리 생성하고 그리기 시에 적절한 것을 선택할 것입니다.
 
-### Step 5 - Render passes
+### 단계 5 - 렌더 패스
 
-Render passes in Vulkan describe the type of images that are used during
-rendering operations, how they will be used, and how their contents should be
-treated. In our initial triangle rendering application, we'll tell Vulkan that
-we will use a single image as color target and that we want it to be cleared
-to a solid color right before the drawing operation. Whereas a render pass only
-describes the type of images, a VkFramebuffer actually binds specific images to
-these slots.
+Vulkan의 렌더 패스는 렌더링 작업 중에 사용되는 이미지의 유형, 그것들이 어떻게 사용될 것인지, 그리고 그 내용이 어떻게 처리되어야 하는지를 설명합니다. 초기 삼각형 렌더링 애플리케이션에서는 하나의 이미지를 컬러 타겟으로 사용할 것이며, 그리기 작업 직전에 단색으로 지우기를 원한다고 Vulkan에 알릴 것입니다. 렌더 패스가 이미지의 유형만 설명하는 반면, VkFramebuffer는 실제로 특정 이미지를 이러한 슬롯에 바인딩합니다.
 
-### Step 6 - Graphics pipeline
+### 단계 6 - 그래픽스 파이프라인
 
-The graphics pipeline in Vulkan is set up by creating a VkPipeline object. It
-describes the configurable state of the graphics card, like the viewport size
-and depth buffer operation and the programmable state using VkShaderModule
-objects. The VkShaderModule objects are created from shader byte code. The
-driver also needs to know which render targets will be used in the pipeline,
-which we specify by referencing the render pass.
+Vulkan의 그래픽스 파이프라인은 VkPipeline 객체를 생성하여 설정됩니다. 이는 뷰포트 크기와 깊이 버퍼 작업과 같은 그래픽 카드의 구성 가능한 상태와 VkShaderModule 객체를 사용한 프로그래밍 가능한 상태를 설명합니다. VkShaderModule 객체들은 셰이더 바이트코드로부터 생성됩니다. 드라이버는 또한 파이프라인에서 어떤 렌더 타겟이 사용될 것인지 알아야 하는데, 이는 렌더 패스를 참조하여 지정합니다.
 
-One of the most distinctive features of Vulkan compared to existing APIs, is
-that almost all configuration of the graphics pipeline needs to be set in advance.
-That means that if you want to switch to a different shader or slightly
-change your vertex layout, then you need to entirely recreate the graphics
-pipeline. That means that you will have to create many VkPipeline objects in
-advance for all the different combinations you need for your rendering
-operations. Only some basic configuration, like viewport size and clear color,
-can be changed dynamically. All of the state also needs to be described
-explicitly, there is no default color blend state, for example.
+기존 API들과 비교했을 때 Vulkan의 가장 독특한 특징 중 하나는 그래픽스 파이프라인의 거의 모든 구성을 미리 설정해야 한다는 것입니다. 이는 다른 셰이더로 전환하거나 버텍스 레이아웃을 약간 변경하려면 그래픽스 파이프라인을 완전히 다시 생성해야 한다는 의미입니다. 즉, 렌더링 작업에 필요한 모든 다른 조합에 대해 미리 많은 VkPipeline 객체를 생성해야 합니다. 뷰포트 크기와 클리어 색상과 같은 일부 기본 구성만 동적으로 변경할 수 있습니다. 또한 모든 상태를 명시적으로 설명해야 하며, 예를 들어 기본 색상 블렌드 상태가 없습니다.
 
-The good news is that because you're doing the equivalent of ahead-of-time
-compilation versus just-in-time compilation, there are more optimization
-opportunities for the driver and runtime performance is more predictable,
-because large state changes like switching to a different graphics pipeline are
-made very explicit.
+좋은 소식은 Just-In-Time 컴파일 대신 Ahead-Of-Time 컴파일과 같은 작업을 수행하기 때문에, 드라이버에 더 많은 최적화 기회가 있고 런타임 성능이 더 예측 가능하다는 것입니다. 다른 그래픽스 파이프라인으로 전환하는 것과 같은 큰 상태 변경이 매우 명시적으로 이루어지기 때문입니다.
 
-### Step 7 - Command pools and command buffers
+### 단계 7 - 커맨드 풀과 커맨드 버퍼
 
-As mentioned earlier, many of the operations in Vulkan that we want to execute,
-like drawing operations, need to be submitted to a queue. These operations first
-need to be recorded into a VkCommandBuffer before they can be submitted. These
-command buffers are allocated from a `VkCommandPool` that is associated with a
-specific queue family. To draw a simple triangle, we need to record a command
-buffer with the following operations:
+앞서 언급했듯이, 그리기 작업과 같이 실행하고자 하는 Vulkan의 많은 작업들은 큐에 제출되어야 합니다. 이러한 작업들은 제출되기 전에 먼저 VkCommandBuffer에 기록되어야 합니다. 이러한 커맨드 버퍼들은 특정 큐 패밀리와 연관된 `VkCommandPool`에서 할당됩니다. 간단한 삼각형을 그리기 위해서는 다음 작업들을 포함하는 커맨드 버퍼를 기록해야 합니다:
 
-* Begin the render pass
-* Bind the graphics pipeline
-* Draw 3 vertices
-* End the render pass
+* 렌더 패스 시작
+* 그래픽스 파이프라인 바인딩
+* 3개의 버텍스 그리기
+* 렌더 패스 종료
 
-Because the image in the framebuffer depends on which specific image the swap
-chain will give us, we need to record a command buffer for each possible image
-and select the right one at draw time. The alternative would be to record the
-command buffer again every frame, which is not as efficient.
+프레임버퍼의 이미지는 스왑 체인이 제공할 특정 이미지에 따라 달라지므로, 가능한 각 이미지에 대해 커맨드 버퍼를 기록하고 그리기 시점에 적절한 것을 선택해야 합니다. 대안은 매 프레임마다 커맨드 버퍼를 다시 기록하는 것이지만, 이는 그다지 효율적이지 않습니다.
 
-### Step 8 - Main loop
+### 단계 8 - 메인 루프
 
-Now that the drawing commands have been wrapped into a command buffer, the main
-loop is quite straightforward. We first acquire an image from the swap chain
-with vkAcquireNextImageKHR. We can then select the appropriate command buffer
-for that image and execute it with vkQueueSubmit. Finally, we return the image
-to the swap chain for presentation to the screen with vkQueuePresentKHR.
+이제 그리기 명령이 커맨드 버퍼에 래핑되었으므로, 메인 루프는 꽤 간단합니다. 먼저 vkAcquireNextImageKHR로 스왑 체인에서 이미지를 가져옵니다. 그런 다음 해당 이미지에 대한 적절한 커맨드 버퍼를 선택하고 vkQueueSubmit으로 실행합니다. 마지막으로 vkQueuePresentKHR로 이미지를 스왑 체인에 반환하여 화면에 표시합니다.
 
-Operations that are submitted to queues are executed asynchronously. Therefore
-we have to use synchronization objects like semaphores to ensure a correct
-order of execution. Execution of the draw command buffer must be set up to wait
-on image acquisition to finish, otherwise it may occur that we start rendering
-to an image that is still being read for presentation on the screen. The
-vkQueuePresentKHR call in turn needs to wait for rendering to be finished, for
-which we'll use a second semaphore that is signaled after rendering completes.
+큐에 제출된 작업들은 비동기적으로 실행됩니다. 따라서 올바른 실행 순서를 보장하기 위해 세마포어와 같은 동기화 객체를 사용해야 합니다. 그리기 커맨드 버퍼의 실행은 이미지 획득이 완료될 때까지 기다리도록 설정되어야 합니다. 그렇지 않으면 화면에 표시하기 위해 아직 읽고 있는 이미지에 렌더링을 시작할 수 있습니다. 마찬가지로 vkQueuePresentKHR 호출은 렌더링이 완료될 때까지 기다려야 하며, 이를 위해 렌더링이 완료된 후 신호를 보내는 두 번째 세마포어를 사용할 것입니다.
 
-### Summary
+### 요약
 
-This whirlwind tour should give you a basic understanding of the work ahead for
-drawing the first triangle. A real-world program contains more steps, like
-allocating vertex buffers, creating uniform buffers and uploading texture images
-that will be covered in subsequent chapters, but we'll start simple because
-Vulkan has enough of a steep learning curve as it is. Note that we'll cheat a
-bit by initially embedding the vertex coordinates in the vertex shader instead
-of using a vertex buffer. That's because managing vertex buffers requires some
-familiarity with command buffers first.
+이 빠른 둘러보기를 통해 첫 삼각형을 그리기 위한 작업에 대한 기본적인 이해를 얻으셨을 것입니다. 실제 프로그램에는 버텍스 버퍼 할당, 유니폼 버퍼 생성, 텍스처 이미지 업로드와 같은 더 많은 단계가 포함되며 이는 이후 챕터에서 다룰 것입니다. 하지만 Vulkan은 그 자체로 학습 곡선이 충분히 가파르기 때문에 간단하게 시작할 것입니다. 처음에는 버텍스 버퍼 대신 버텍스 좌표를 버텍스 셰이더에 직접 포함시키는 방식으로 약간의 편법을 사용할 것입니다. 이는 버텍스 버퍼 관리에 먼저 커맨드 버퍼에 대한 친숙도가 필요하기 때문입니다.
 
-So in short, to draw the first triangle we need to:
+요약하자면, 첫 삼각형을 그리기 위해서는 다음이 필요합니다:
 
-* Create a VkInstance
-* Select a supported graphics card (VkPhysicalDevice)
-* Create a VkDevice and VkQueue for drawing and presentation
-* Create a window, window surface and swap chain
-* Wrap the swap chain images into VkImageView
-* Create a render pass that specifies the render targets and usage
-* Create framebuffers for the render pass
-* Set up the graphics pipeline
-* Allocate and record a command buffer with the draw commands for every possible
-swap chain image
-* Draw frames by acquiring images, submitting the right draw command buffer and
-returning the images back to the swap chain
+* VkInstance 생성
+* 지원되는 그래픽 카드 선택(VkPhysicalDevice)
+* 그리기와 표시를 위한 VkDevice와 VkQueue 생성
+* 윈도우, 윈도우 서피스, 스왑 체인 생성
+* 스왑 체인 이미지를 VkImageView로 래핑
+* 렌더 타겟과 사용법을 지정하는 렌더 패스 생성
+* 렌더 패스를 위한 프레임버퍼 생성
+* 그래픽스 파이프라인 설정
+* 가능한 모든 스왑 체인 이미지에 대한 그리기 명령이 포함된 커맨드 버퍼 할당 및 기록
+* 이미지 획득, 적절한 그리기 커맨드 버퍼 제출, 이미지를 스왑 체인에 반환하여 프레임 그리기
 
-It's a lot of steps, but the purpose of each individual step will be made very
-simple and clear in the upcoming chapters. If you're confused about the relation
-of a single step compared to the whole program, you should refer back to this
-chapter.
+단계가 많지만, 각 개별 단계의 목적은 앞으로의 챕터에서 매우 간단하고 명확하게 설명될 것입니다. 전체 프로그램과 비교하여 단일 단계의 관계가 혼란스럽다면 이 챕터를 다시 참조하시기 바랍니다.
 
-## API concepts
+## API 개념
 
-This chapter will conclude with a short overview of how the Vulkan API is
-structured at a lower level.
+이 챕터는 Vulkan API가 하위 레벨에서 어떻게 구조화되어 있는지에 대한 간단한 개요로 마무리하겠습니다.
 
-### Coding conventions
+### 코딩 규칙
 
-All of the Vulkan functions, enumerations and structs are defined in the
-`vulkan.h` header, which is included in the [Vulkan SDK](https://lunarg.com/vulkan-sdk/)
-developed by LunarG. We'll look into installing this SDK in the next chapter.
+모든 Vulkan 함수, 열거형, 구조체는 LunarG에서 개발한 [Vulkan SDK](https://lunarg.com/vulkan-sdk/)에 포함된 `vulkan.h` 헤더에 정의되어 있습니다. 다음 챕터에서 이 SDK를 설치하는 방법을 살펴볼 것입니다.
 
-Functions have a lower case `vk` prefix, types like enumerations and structs
-have a `Vk` prefix and enumeration values have a `VK_` prefix. The API heavily
-uses structs to provide parameters to functions. For example, object creation
-generally follows this pattern:
+함수는 소문자 `vk` 접두사를, 열거형과 구조체 같은 타입은 `Vk` 접두사를, 열거형 값은 `VK_` 접두사를 가집니다. API는 함수에 매개변수를 전달하기 위해 구조체를 많이 사용합니다. 예를 들어, 객체 생성은 일반적으로 다음과 같은 패턴을 따릅니다:
 
 ```c++
 VkXXXCreateInfo createInfo{};
@@ -244,38 +108,16 @@ if (vkCreateXXX(&createInfo, nullptr, &object) != VK_SUCCESS) {
 }
 ```
 
-Many structures in Vulkan require you to explicitly specify the type of
-structure in the `sType` member. The `pNext` member can point to an extension
-structure and will always be `nullptr` in this tutorial. Functions that create
-or destroy an object will have a VkAllocationCallbacks parameter that allows you
-to use a custom allocator for driver memory, which will also be left `nullptr`
-in this tutorial.
+Vulkan의 많은 구조체에서는 `sType` 멤버에 구조체의 타입을 명시적으로 지정해야 합니다. `pNext` 멤버는 확장 구조체를 가리킬 수 있으며 이 튜토리얼에서는 항상 `nullptr`일 것입니다. 객체를 생성하거나 파괴하는 함수들은 드라이버 메모리에 대한 사용자 정의 할당자를 사용할 수 있게 하는 VkAllocationCallbacks 매개변수를 가지며, 이 또한 이 튜토리얼에서는 `nullptr`로 둘 것입니다.
 
-Almost all functions return a VkResult that is either `VK_SUCCESS` or an error
-code. The specification describes which error codes each function can return and
-what they mean.
+거의 모든 함수는 `VK_SUCCESS` 또는 오류 코드인 VkResult를 반환합니다. 명세서는 각 함수가 반환할 수 있는 오류 코드와 그 의미를 설명합니다.
 
-### Validation layers
+### 검증 계층
 
-As mentioned earlier, Vulkan is designed for high performance and low driver
-overhead. Therefore it will include very limited error checking and debugging
-capabilities by default. The driver will often crash instead of returning an
-error code if you do something wrong, or worse, it will appear to work on your
-graphics card and completely fail on others.
+앞서 언급했듯이, Vulkan은 높은 성능과 낮은 드라이버 오버헤드를 위해 설계되었습니다. 따라서 기본적으로는 매우 제한된 오류 검사와 디버깅 기능만을 포함합니다. 잘못된 작업을 수행하면 드라이버는 오류 코드를 반환하는 대신 종종 충돌할 것이며, 더 나쁜 경우에는 사용자의 그래픽 카드에서는 작동하는 것처럼 보이다가 다른 카드에서는 완전히 실패할 수 있습니다.
 
-Vulkan allows you to enable extensive checks through a feature known as
-*validation layers*. Validation layers are pieces of code that can be inserted
-between the API and the graphics driver to do things like running extra checks
-on function parameters and tracking memory management problems. The nice thing
-is that you can enable them during development and then completely disable them
-when releasing your application for zero overhead. Anyone can write their own
-validation layers, but the Vulkan SDK by LunarG provides a standard set of
-validation layers that we'll be using in this tutorial. You also need to
-register a callback function to receive debug messages from the layers.
+Vulkan은 *검증 계층*이라고 알려진 기능을 통해 광범위한 검사를 활성화할 수 있게 합니다. 검증 계층은 함수 매개변수에 대한 추가 검사를 실행하고 메모리 관리 문제를 추적하는 등의 작업을 수행하기 위해 API와 그래픽스 드라이버 사이에 삽입될 수 있는 코드 조각입니다. 좋은 점은 개발 중에는 이것들을 활성화하고 애플리케이션을 릴리스할 때는 완전히 비활성화하여 오버헤드를 0으로 만들 수 있다는 것입니다. 누구나 자신만의 검증 계층을 작성할 수 있지만, LunarG의 Vulkan SDK는 이 튜토리얼에서 사용할 표준 검증 계층 세트를 제공합니다. 또한 계층으로부터 디버그 메시지를 받기 위한 콜백 함수를 등록해야 합니다.
 
-Because Vulkan is so explicit about every operation and the validation layers
-are so extensive, it can actually be a lot easier to find out why your screen is
-black compared to OpenGL and Direct3D!
+Vulkan은 모든 작업에 대해 매우 명시적이고 검증 계층이 매우 광범위하기 때문에, OpenGL과 Direct3D에 비해 화면이 검은색인 이유를 찾아내는 것이 실제로 더 쉬울 수 있습니다!
 
-There's only one more step before we'll start writing code and that's [setting
-up the development environment](!en/Development_environment).
+코드 작성을 시작하기 전에 한 단계가 더 남아있습니다. 바로 [개발 환경 설정](!ko/Development_environment)입니다.

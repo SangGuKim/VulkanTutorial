@@ -1,36 +1,31 @@
-# Descriptor set layout and buffer
+# 디스크립터 세트 레이아웃 및 버퍼
 
-## Introduction
+## 소개
 
-We're now able to pass arbitrary attributes to the vertex shader for each
-vertex, but what about global variables? We're going to move on to 3D graphics
-from this chapter on and that requires a model-view-projection matrix. We could
-include it as vertex data, but that's a waste of memory and it would require us
-to update the vertex buffer whenever the transformation changes. The
-transformation could easily change every single frame.
+우리는 이제 각 버텍스에 대해 버텍스 셰이더로 임의의 속성을 전달할 수 있지만, 
+전역 변수는 어떨까요? 이 장부터 3D 그래픽으로 넘어가면서 모델-뷰-프로젝션 행렬이 
+필요하게 됩니다. 이를 버텍스 데이터로 포함시킬 수 있지만, 이는 메모리 낭비이며 변환
+(transform)이 변경될 때마다 버텍스 버퍼를 업데이트해야 합니다. 변환이 매 프레임마다 
+쉽게 변경될 수 있습니다.
 
-The right way to tackle this in Vulkan is to use *resource descriptors*. A
-descriptor is a way for shaders to freely access resources like buffers and
-images. We're going to set up a buffer that contains the transformation matrices
-and have the vertex shader access them through a descriptor. Usage of
-descriptors consists of three parts:
+Vulkan에서 이 문제를 해결하는 올바른 방법은 *리소스 디스크립터*를 사용하는 것입니다.
+디스크립터는 셰이더가 버퍼 및 이미지와 같은 리소스에 자유롭게 접근할 수 있는 방법입니다. 
+변환 행렬을 포함하는 버퍼를 설정하고 버텍스 셰이더가 디스크립터를 통해 이에 접근하도록 
+할 것입니다. 디스크립터의 사용은 세 부분으로 구성됩니다:
 
-* Specify a descriptor set layout during pipeline creation
-* Allocate a descriptor set from a descriptor pool
-* Bind the descriptor set during rendering
+- 파이프라인 생성 중 디스크립터 세트 레이아웃 지정
+- 디스크립터 풀에서 디스크립터 세트 할당
+- 렌더링 중 디스크립터 세트 바인딩
 
-The *descriptor set layout* specifies the types of resources that are going to be
-accessed by the pipeline, just like a render pass specifies the types of
-attachments that will be accessed. A *descriptor set* specifies the actual
-buffer or image resources that will be bound to the descriptors, just like a
-framebuffer specifies the actual image views to bind to render pass attachments.
-The descriptor set is then bound for the drawing commands just like the vertex
-buffers and framebuffer.
+*디스크립터 세트 레이아웃*은 파이프라인이 접근할 리소스 유형을 지정하며, 렌더 패스가 
+접근할 첨부 유형을 지정하는 것과 비슷합니다. *디스크립터 세트*는 디스크립터에 바인딩될 
+실제 버퍼 또는 이미지 리소스를 지정하며, 프레임버퍼가 렌더 패스 첨부에 바인딩할 실제 
+이미지 뷰를 지정하는 것과 비슷합니다. 그런 다음 버텍스 버퍼와 프레임버퍼처럼 그리기 
+명령에 디스크립터 세트가 바인딩됩니다.
 
-There are many types of descriptors, but in this chapter we'll work with uniform
-buffer objects (UBO). We'll look at other types of descriptors in future
-chapters, but the basic process is the same. Let's say we have the data we want
-the vertex shader to have in a C struct like this:
+이번 장에서는 유니폼 버퍼 객체(UBO)와 같은 디스크립터를 다룰 것입니다. 다른 유형의 
+디스크립터는 추후 장에서 살펴볼 것이지만, 기본 과정은 동일합니다. 버텍스 셰이더가 
+가지고 있기를 원하는 데이터를 C 구조체로 다음과 같이 가지고 있다고 가정해 봅시다:
 
 ```c++
 struct UniformBufferObject {
@@ -40,8 +35,8 @@ struct UniformBufferObject {
 };
 ```
 
-Then we can copy the data to a `VkBuffer` and access it through a uniform buffer
-object descriptor from the vertex shader like this:
+그런 다음 데이터를 `VkBuffer`에 복사하고 버텍스 셰이더에서 유니폼 버퍼 객체 디스크립터를 
+통해 접근할 수 있습니다:
 
 ```glsl
 layout(binding = 0) uniform UniformBufferObject {
@@ -56,8 +51,8 @@ void main() {
 }
 ```
 
-We're going to update the model, view and projection matrices every frame to
-make the rectangle from the previous chapter spin around in 3D.
+이전 장에서 나온 사각형을 3D로 회전시켜서 매 프레임마다 모델, 뷰 및 프로젝션 행렬을 
+업데이트할 것입니다.
 
 ## Vertex shader
 

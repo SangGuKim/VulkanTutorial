@@ -1,3 +1,5 @@
+# Combined image sampler
+
 ## Introduction
 
 We looked at descriptors for the first time in the uniform buffers part of the

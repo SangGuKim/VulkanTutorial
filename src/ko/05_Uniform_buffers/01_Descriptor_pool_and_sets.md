@@ -1,3 +1,5 @@
+# Descriptor pool and sets
+
 ## Introduction
 
 The descriptor set layout from the previous chapter describes the type of

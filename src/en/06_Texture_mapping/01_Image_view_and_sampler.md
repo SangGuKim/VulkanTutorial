@@ -1,3 +1,5 @@
+# Image view and sampler
+
 In this chapter we're going to create two more resources that are needed for the
 graphics pipeline to sample an image. The first resource is one that we've
 already seen before while working with the swap chain images, but the second one

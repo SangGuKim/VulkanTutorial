@@ -1,3 +1,5 @@
+# Descriptor set layout and buffer
+
 ## Introduction
 
 We're now able to pass arbitrary attributes to the vertex shader for each

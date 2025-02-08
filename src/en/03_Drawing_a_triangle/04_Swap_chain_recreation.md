@@ -1,3 +1,5 @@
+# Swap chain recreation
+
 ## Introduction
 
 The application we have now successfully draws a triangle, but there are some

@@ -1,3 +1,5 @@
+# Framebuffers
+
 We've talked a lot about framebuffers in the past few chapters and we've set up
 the render pass to expect a single framebuffer with the same format as the swap
 chain images, but we haven't actually created any yet.

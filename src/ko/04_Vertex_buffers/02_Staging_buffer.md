@@ -1,3 +1,5 @@
+# Staging buffer
+
 ## Introduction
 
 The vertex buffer we have right now works correctly, but the memory type that

@@ -1,3 +1,5 @@
+# Introduction
+
 Over the course of the next few chapters we'll be setting up a graphics pipeline
 that is configured to draw our first triangle. The graphics pipeline is the
 sequence of operations that take the vertices and textures of your meshes all

@@ -1,3 +1,5 @@
+# Vertex buffer creation
+
 ## Introduction
 
 Buffers in Vulkan are regions of memory used for storing arbitrary data that can

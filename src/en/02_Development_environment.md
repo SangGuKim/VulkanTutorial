@@ -1,3 +1,5 @@
+# Development environment
+
 In this chapter we'll set up your environment for developing Vulkan applications
 and install some useful libraries. All of the tools we'll use, with the
 exception of the compiler, are compatible with Windows, Linux and MacOS, but the

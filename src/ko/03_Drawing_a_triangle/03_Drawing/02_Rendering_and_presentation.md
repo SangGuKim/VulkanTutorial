@@ -1,3 +1,5 @@
+# Rendering and presentation
+
 
 This is the chapter where everything is going to come together. We're going to
 write the `drawFrame` function that will be called from the main loop to put the

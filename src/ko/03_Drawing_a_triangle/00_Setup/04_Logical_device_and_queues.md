@@ -1,3 +1,5 @@
+# Logical device and queues
+
 ## Introduction
 
 After selecting a physical device to use we need to set up a *logical device* to

@@ -1,3 +1,5 @@
+# Fixed functions
+
 
 The older graphics APIs provided default state for most of the stages of the
 graphics pipeline. In Vulkan you have to be explicit about most pipeline states as

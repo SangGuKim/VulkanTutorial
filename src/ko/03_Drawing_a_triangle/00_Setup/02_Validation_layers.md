@@ -1,3 +1,5 @@
+# Validation layers
+
 ## What are validation layers?
 
 The Vulkan API is designed around the idea of minimal driver overhead and one of

@@ -1,3 +1,5 @@
+# Conclusion
+
 We can now combine all of the structures and objects from the previous chapters
 to create the graphics pipeline! Here's the types of objects we have now, as a
 quick recap:

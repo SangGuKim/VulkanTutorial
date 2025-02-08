@@ -1,3 +1,5 @@
+# Loading models
+
 ## Introduction
 
 Your program is now ready to render textured 3D meshes, but the current geometry

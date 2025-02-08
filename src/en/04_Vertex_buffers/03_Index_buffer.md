@@ -1,3 +1,5 @@
+# Index buffer
+
 ## Introduction
 
 The 3D meshes you'll be rendering in a real world application will often share

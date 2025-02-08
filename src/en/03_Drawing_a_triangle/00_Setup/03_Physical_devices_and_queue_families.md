@@ -1,3 +1,5 @@
+# Physical devices and queue families
+
 ## Selecting a physical device
 
 After initializing the Vulkan library through a VkInstance we need to look for

@@ -1,3 +1,5 @@
+# Render passes
+
 ## Setup
 
 Before we can finish creating the pipeline, we need to tell Vulkan about the

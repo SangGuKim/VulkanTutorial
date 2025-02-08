@@ -1,3 +1,5 @@
+# Frames in flight
+
 ## Frames in flight
 
 Right now our render loop has one glaring flaw. We are required to wait on the

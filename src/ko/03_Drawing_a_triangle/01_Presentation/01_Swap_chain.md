@@ -1,3 +1,5 @@
+# Swap chain
+
 Vulkan does not have the concept of a "default framebuffer", hence it requires an infrastructure that will own the buffers we will render to before we visualize them on the screen. This infrastructure is
 known as the *swap chain* and must be created explicitly in Vulkan. The swap
 chain is essentially a queue of images that are waiting to be presented to the

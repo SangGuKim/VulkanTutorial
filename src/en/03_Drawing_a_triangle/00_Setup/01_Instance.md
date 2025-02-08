@@ -1,3 +1,5 @@
+# Instance
+
 ## Creating an instance
 
 The very first thing you need to do is initialize the Vulkan library by creating

@@ -1,3 +1,5 @@
+# Images
+
 ## Introduction
 
 The geometry has been colored using per-vertex colors so far, which is a rather

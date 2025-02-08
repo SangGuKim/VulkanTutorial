@@ -1,3 +1,5 @@
+# Window surface
+
 Since Vulkan is a platform agnostic API, it can not interface directly with the
 window system on its own. To establish the connection between Vulkan and the
 window system to present results to the screen, we need to use the WSI (Window

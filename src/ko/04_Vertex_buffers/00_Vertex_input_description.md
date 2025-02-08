@@ -1,3 +1,5 @@
+# Vertex input description
+
 ## Introduction
 
 In the next few chapters, we're going to replace the hardcoded vertex data in

@@ -1,23 +1,23 @@
-# Privacy policy
+# 개인정보 보호 정책
 
-## General
+## 일반
 
-This privacy policy applies to the information that is collected when you use vulkan-tutorial.com or any of its subdomains. It describes how the owner of this website, Alexander Overvoorde, collects, uses and shares information about you.
+이 개인정보 보호 정책은 vulkan-tutorial.com 또는 그 하위 도메인을 사용할 때 수집되는 정보에 적용됩니다. 이 웹사이트의 소유자인 Alexander Overvoorde가 어떻게 사용자에 대한 정보를 수집, 사용 및 공유하는지 설명합니다.
 
-## Analytics
+## 분석
 
-This website collects analytics about visitors using a self-hosted instance of Matomo ([https://matomo.org/](https://matomo.org/)), formerly known as Piwik. It records which pages you visit, what type of device and browser you use, how long you view a given page and where you came from. This information is anonymized by only recording the first two bytes of your IP address (e.g. `123.123.xxx.xxx`). These anonymized logs are stored for an indefinite amount of time.
+이 웹사이트는 Matomo([https://matomo.org/](https://matomo.org/)), 이전 이름은 Piwik인 자체 호스팅 인스턴스를 사용하여 방문자에 대한 분석 정보를 수집합니다. 방문한 페이지, 사용한 기기 및 브라우저 유형, 특정 페이지를 본 시간, 그리고 출발지 등이 기록됩니다. 이 정보는 IP 주소의 처음 두 바이트만 기록하여 익명화됩니다(예: `123.123.xxx.xxx`). 이 익명화된 로그는 무기한 저장됩니다.
 
-These analytics are used for the purpose of tracking how content on the website is consumed, how many people visit the website in general, and which other websites link here. This makes it easier to engage with the community and determine which areas of the website should be improved, for example if extra time should be spent on facilitating mobile reading.
+이 분석은 웹사이트의 콘텐츠가 어떻게 소비되는지, 일반적으로 몇 명이 웹사이트를 방문하는지, 어떤 다른 웹사이트가 이곳을 링크하는지 추적하기 위해 사용됩니다. 이는 커뮤니티와의 소통을 용이하게 하고, 예를 들어 모바일 독서를 지원하는 데 추가 시간을 투자해야 할지 결정하는 데 도움이 되는 웹사이트의 어떤 영역을 개선해야 할지 판단하는 데 도움이 됩니다.
 
-This data is not shared with third parties.
+이 데이터는 제3자와 공유되지 않습니다.
 
-## Advertisement
+## 광고
 
-This website uses a third-party advertisement server that may use cookies to track activities on the website to measure engagement with advertisements.
+이 웹사이트는 광고 참여를 측정하기 위해 웹사이트 활동을 추적하는 쿠키를 사용할 수 있는 제3자 광고 서버를 사용합니다.
 
-## Comments
+## 댓글
 
-Each chapter includes a comment section at the end that is provided by the third-party Disqus service. This service collects identity data to facilitate the reading and submission of comments, and aggregate usage information to improve their service.
+각 챕터의 마지막에는 Disqus 서비스에 의해 제공되는 댓글 섹션이 포함되어 있습니다. 이 서비스는 댓글 읽기 및 제출을 용이하게 하기 위해 신원 데이터를 수집하고, 서비스를 개선하기 위해 사용 정보를 집계합니다.
 
-The full privacy policy of this third-party service can be found at [https://help.disqus.com/terms-and-policies/disqus-privacy-policy](https://help.disqus.com/terms-and-policies/disqus-privacy-policy).
+이 제3자 서비스의 전체 개인정보 보호 정책은 [https://help.disqus.com/terms-and-policies/disqus-privacy-policy](https://help.disqus.com/terms-and-policies/disqus-privacy-policy)에서 확인할 수 있습니다.

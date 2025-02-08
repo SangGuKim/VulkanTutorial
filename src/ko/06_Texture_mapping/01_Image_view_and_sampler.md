@@ -1,18 +1,14 @@
-# Image view and sampler
+# 이미지 뷰 및 샘플러
 
-In this chapter we're going to create two more resources that are needed for the
-graphics pipeline to sample an image. The first resource is one that we've
-already seen before while working with the swap chain images, but the second one
-is new - it relates to how the shader will read texels from the image.
+## 소개
 
-## Texture image view
+이번 장에서는 이미지를 샘플링하는 데 필요한 두 가지 리소스를 생성합니다. 첫 번째 리소스는 스왑 체인 이미지를 다루면서 이미 본 적이 있는 것이지만, 두 번째 리소스는 새로운 것으로, 셰이더가 이미지에서 텍셀을 읽는 방식과 관련이 있습니다.
 
-We've seen before, with the swap chain images and the framebuffer, that images
-are accessed through image views rather than directly. We will also need to
-create such an image view for the texture image.
+## 텍스처 이미지 뷰
 
-Add a class member to hold a `VkImageView` for the texture image and create a
-new function `createTextureImageView` where we'll create it:
+스왑 체인 이미지와 프레임버퍼에서 보았듯이, 이미지는 직접 접근하는 대신 이미지 뷰를 통해 접근됩니다. 텍스처 이미지에 대해서도 이미지 뷰를 생성해야 합니다.
+
+텍스처 이미지에 대한 `VkImageView`를 보관할 클래스 멤버를 추가하고 `createTextureImageView`라는 새 함수를 만들어 그곳에서 이미지 뷰를 생성합니다:
 
 ```c++
 VkImageView textureImageView;
@@ -34,8 +30,7 @@ void createTextureImageView() {
 }
 ```
 
-The code for this function can be based directly on `createImageViews`. The only
-two changes you have to make are the `format` and the `image`:
+이 함수는 `createImageViews`에서 직접 코드를 기반으로 할 수 있습니다. 변경해야 할 것은 `format`과 `image` 두 가지뿐입니다:
 
 ```c++
 VkImageViewCreateInfo viewInfo{};
@@ -50,9 +45,7 @@ viewInfo.subresourceRange.baseArrayLayer = 0;
 viewInfo.subresourceRange.layerCount = 1;
 ```
 
-I've left out the explicit `viewInfo.components` initialization, because
-`VK_COMPONENT_SWIZZLE_IDENTITY` is defined as `0` anyway. Finish creating the
-image view by calling `vkCreateImageView`:
+`viewInfo.components` 초기화를 명시적으로 생략했습니다. 왜냐하면 `VK_COMPONENT_SWIZZLE_IDENTITY`가 어차피 `0`으로 정의되어 있기 때문입니다. `vkCreateImageView`를 호출하여 이미지 뷰를 생성을 완료하세요:
 
 ```c++
 if (vkCreateImageView(device, &viewInfo, nullptr, &textureImageView) != VK_SUCCESS) {
@@ -60,8 +53,7 @@ if (vkCreateImageView(device, &viewInfo, nullptr, &textureImageView) != VK_SUCCE
 }
 ```
 
-Because so much of the logic is duplicated from `createImageViews`, you may wish
-to abstract it into a new `createImageView` function:
+로직이 `createImageViews`에서 많이 중복되므로, 새로운 `createImageView` 함수로 추상화하는 것이 좋습니다:
 
 ```c++
 VkImageView createImageView(VkImage image, VkFormat format) {
@@ -85,7 +77,7 @@ VkImageView createImageView(VkImage image, VkFormat format) {
 }
 ```
 
-The `createTextureImageView` function can now be simplified to:
+이제 `createTextureImageView` 함수는 다음과 같이 간소화할 수 있습니다:
 
 ```c++
 void createTextureImageView() {
@@ -93,7 +85,7 @@ void createTextureImageView() {
 }
 ```
 
-And `createImageViews` can be simplified to:
+그리고 `createImageViews`도 간소화할 수 있습니다:
 
 ```c++
 void createImageViews() {
@@ -105,8 +97,7 @@ void createImageViews() {
 }
 ```
 
-Make sure to destroy the image view at the end of the program, right before
-destroying the image itself:
+프로그램의 끝에서 이미지 자체를 파괴하기 직전에 이미지 뷰를 파괴하세요:
 
 ```c++
 void cleanup() {
@@ -118,46 +109,29 @@ void cleanup() {
     vkFreeMemory(device, textureImageMemory, nullptr);
 ```
 
-## Samplers
+## 샘플러
 
-It is possible for shaders to read texels directly from images, but that is not
-very common when they are used as textures. Textures are usually accessed
-through samplers, which will apply filtering and transformations to compute the
-final color that is retrieved.
+셰이더에서 직접 이미지에서 텍셀을 읽을 수 있지만, 일반적으로 텍스처로 사용될 때는 그
 
-These filters are helpful to deal with problems like oversampling. Consider a
-texture that is mapped to geometry with more fragments than texels. If you
-simply took the closest texel for the texture coordinate in each fragment, then
-you would get a result like the first image:
+렇게 하지 않습니다. 텍스처는 보통 샘플러를 통해 접근되며, 샘플러는 최종 색상을 검색하는 데 필요한 필터링 및 변환을 적용합니다.
+
+이 필터는 오버샘플링과 같은 문제를 다루는 데 도움이 됩니다. 예를 들어, 텍셀보다 많은 프래그먼트에 매핑된 텍스처를 고려해 보세요. 각 프래그먼트의 텍스처 좌표에 가장 가까운 텍셀을 단순히 가져오면 첫 번째 이미지와 같은 결과를 얻게 됩니다:
 
 ![](/images/texture_filtering.png)
 
-If you combined the 4 closest texels through linear interpolation, then you
-would get a smoother result like the one on the right. Of course your
-application may have art style requirements that fit the left style more (think
-Minecraft), but the right is preferred in conventional graphics applications. A
-sampler object automatically applies this filtering for you when reading a color
-from the texture.
+4개의 가장 가까운 텍셀을 선형 보간을 통해 결합하면 오른쪽과 같은 더 부드러운 결과를 얻을 수 있습니다. 물론 귀하의 애플리케이션에는 왼쪽 스타일이 더 적합한 예술 스타일 요구 사항이 있을 수 있습니다(마인크래프트를 생각해 보세요), 하지만 일반적인 그래픽 애플리케이션에서는 오른쪽이 선호됩니다. 샘플러 객체는 텍스처에서 색상을 읽을 때 자동으로 이 필터링을 적용합니다.
 
-Undersampling is the opposite problem, where you have more texels than
-fragments. This will lead to artifacts when sampling high frequency patterns
-like a checkerboard texture at a sharp angle:
+언더샘플링은 반대 문제로, 텍셀보다 프래그먼트가 더 많습니다. 이는 예를 들어 날카로운 각도에서 체크보드 텍스처를 샘플링할 때 아티팩트를 유발합니다:
 
 ![](/images/anisotropic_filtering.png)
 
-As shown in the left image, the texture turns into a blurry mess in the
-distance. The solution to this is [anisotropic filtering](https://en.wikipedia.org/wiki/Anisotropic_filtering),
-which can also be applied automatically by a sampler.
+왼쪽 이미지에서 보듯이, 멀리서 보면 텍스처가 흐릿하게 보입니다. 이 문제의 해결책은 [등방성 필터링](https://en.wikipedia.org/wiki/Anisotropic_filtering)이며, 이 또한 샘플러에 의해 자동으로 적용될 수 있습니다.
 
-Aside from these filters, a sampler can also take care of transformations. It
-determines what happens when you try to read texels outside the image through
-its *addressing mode*. The image below displays some of the possibilities:
+이 필터 외에도 샘플러는 변환을 처리할 수 있습니다. *주소 지정 모드*를 통해 이미지 밖의 텍셀을 읽으려고 할 때 발생하는 일을 결정합니다. 아래 이미지는 가능한 몇 가지 옵션을 보여줍니다:
 
 ![](/images/texture_addressing.png)
 
-We will now create a function `createTextureSampler` to set up such a sampler
-object. We'll be using that sampler to read colors from the texture in the
-shader later on.
+이제 `createTextureSampler`라는 함수를 만들어 이러한 샘플러 객체를 설정할 것입니다. 나중에 이 샘플러를 사용하여 셰이더에서 텍스처로부터 색상을 읽을 것입니다.
 
 ```c++
 void initVulkan() {
@@ -175,8 +149,7 @@ void createTextureSampler() {
 }
 ```
 
-Samplers are configured through a `VkSamplerCreateInfo` structure, which
-specifies all filters and transformations that it should apply.
+샘플러는 `VkSamplerCreateInfo` 구조체를 통해 설정되며, 적용할 모든 필터와 변환을 지정합니다.
 
 ```c++
 VkSamplerCreateInfo samplerInfo{};
@@ -185,11 +158,7 @@ samplerInfo.magFilter = VK_FILTER_LINEAR;
 samplerInfo.minFilter = VK_FILTER_LINEAR;
 ```
 
-The `magFilter` and `minFilter` fields specify how to interpolate texels that
-are magnified or minified. Magnification concerns the oversampling problem
-describes above, and minification concerns undersampling. The choices are
-`VK_FILTER_NEAREST` and `VK_FILTER_LINEAR`, corresponding to the modes
-demonstrated in the images above.
+`magFilter` 및 `minFilter` 필드는 확대 또는 축소된 텍셀을 보간하는 방법을 지정합니다. 확대는 위에서 설명한 오버샘플링 문제와 관련이 있으며, 축소는 언더샘플링과 관련이 있습니다. 선택할 수 있는 옵션은 `VK_FILTER_NEAREST` 및 `VK_FILTER_LINEAR`로, 위 이미지에서 보여진 모드와 대응합니다.
 
 ```c++
 samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
@@ -197,81 +166,56 @@ samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 ```
 
-The addressing mode can be specified per axis using the `addressMode` fields.
-The available values are listed below. Most of these are demonstrated in the
-image above. Note that the axes are called U, V and W instead of X, Y and Z.
-This is a convention for texture space coordinates.
+`addressMode` 필드를 사용하여 축별로 주소 지정 모드를 지정할 수 있습니다. 사용 가능한 값은 아래에 나열되어 있습니다. 대부분은 위의 이미지에서 보여진 것과 같습니다. 축은 X, Y, Z가 아닌 U, V, W로 불리는 것이 텍스처 공간 좌표에 대한 관례입니다.
 
-* `VK_SAMPLER_ADDRESS_MODE_REPEAT`: Repeat the texture when going beyond the
-image dimensions.
-* `VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT`: Like repeat, but inverts the
-coordinates to mirror the image when going beyond the dimensions.
-* `VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE`: Take the color of the edge closest to
-the coordinate beyond the image dimensions.
-* `VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE`: Like clamp to edge, but
-instead uses the edge opposite to the closest edge.
-* `VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER`: Return a solid color when sampling
-beyond the dimensions of the image.
+- `VK_SAMPLER_ADDRESS_MODE_REPEAT`: 이미지 차원을 넘어갈 때 텍스처를 반복합니다.
+- `VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT`: 반복과 비슷하지만 차원을 넘어갈 때 좌표를 반전시켜 이미지를 거울처럼 보입니다.
+- `VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE`: 이미지 차원을 넘어갈 때 가장 가까운 가장자리의 색상을 취합니다.
+- `VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE`: 가장자리에 고정하는 것과 비슷하지만, 가장 가까운 가장자리가 아닌 반대 가장자리를 사용합니다.
+- `VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER`: 이미지 차원을 넘어갈 때 고체 색상을 반환합니다.
 
-It doesn't really matter which addressing mode we use here, because we're not
-going to sample outside of the image in this tutorial. However, the repeat mode
-is probably the most common mode, because it can be used to tile textures like
-floors and walls.
+여기서 어떤 주소 지정 모드를 사용하든 중요하지 않습니다. 왜냐하면 이 튜토리얼에서는 이미지 밖을 샘플링하지 않기 때문입니다. 그러나 반복 모드는 바닥과 벽과 같은 텍스처를 타일링하는 데 사용될 수 있으므로 가장 일반적인 모드일 수 있습니다.
 
 ```c++
 samplerInfo.anisotropyEnable = VK_TRUE;
 samplerInfo.maxAnisotropy = ???;
 ```
 
-These two fields specify if anisotropic filtering should be used. There is no
-reason not to use this unless performance is a concern. The `maxAnisotropy`
-field limits the amount of texel samples that can be used to calculate the final
-color. A lower value results in better performance, but lower quality results.
-To figure out which value we can use, we need to retrieve the properties of the physical device like so:
+이 두 필드는 등방성 필터링을 사용할지 여부를 지정합니다. 성능이 문제가 되지 않는 한 사용하는 것이 좋습니다. `maxAnisotropy` 필드는 최종 색상을 계산하는 데 사용될 수 있는 텍셀 샘플 수를 제한합니다. 값이 낮을수록 성능은 좋아지지만 결과 품질은 떨어집니다. 사용할 수 있는 값을 결정하려면 물리적 장치의 속성을 검색해야 합니다.
 
 ```c++
 VkPhysicalDeviceProperties properties{};
 vkGetPhysicalDeviceProperties(physicalDevice, &properties);
 ```
 
-If you look at the documentation for the `VkPhysicalDeviceProperties` structure, you'll see that it contains a `VkPhysicalDeviceLimits` member named `limits`. This struct in turn has a member called `maxSamplerAnisotropy` and this is the maximum value we can specify for `maxAnisotropy`. If we want to go for maximum quality, we can simply use that value directly:
+`VkPhysicalDeviceProperties` 구조체의 문서를 살펴보면 `limits`라는 이름의 `VkPhysicalDeviceLimits` 멤버를 포함한다는 것을 알 수 있습니다. 이 구조체는 다시 `maxSamplerAnisotropy`라는 멤버를 가지고 있으며, 이는 `maxAnisotropy`에 지정할 수 있는 최대값입니다. 최대 품질을 원한다면 이 값을 직접 사용할 수 있습니다:
 
 ```c++
 samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
 ```
 
-You can either query the properties at the beginning of your program and pass them around to the functions that need them, or query them in the `createTextureSampler` function itself.
+프로그램의 시작 부분에서 이 속성을 쿼리하고 필요한 함수로 전달하거나 `createTextureSampler` 함수 자체에서 쿼리할 수 있습니다.
 
 ```c++
 samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
 ```
 
-The `borderColor` field specifies which color is returned when sampling beyond
-the image with clamp to border addressing mode. It is possible to return black,
-white or transparent in either float or int formats. You cannot specify an
-arbitrary color.
+`borderColor` 필드는 클램프 투 보더 주소 지정 모드로 이미지 차원을 넘어 샘플링할 때 반환되는 색상을 지정합니다. 가능한 값은 검은색, 흰색 또는 투명한 색상이며, float 또
+
+는 int 형식일 수 있습니다. 임의의 색상을 지정할 수는 없습니다.
 
 ```c++
 samplerInfo.unnormalizedCoordinates = VK_FALSE;
 ```
 
-The `unnormalizedCoordinates` field specifies which coordinate system you want
-to use to address texels in an image. If this field is `VK_TRUE`, then you can
-simply use coordinates within the `[0, texWidth)` and `[0, texHeight)` range. If
-it is `VK_FALSE`, then the texels are addressed using the `[0, 1)` range on all
-axes. Real-world applications almost always use normalized coordinates, because
-then it's possible to use textures of varying resolutions with the exact same
-coordinates.
+`unnormalizedCoordinates` 필드는 텍셀을 이미지에서 주소 지정하는 데 사용하려는 좌표계를 지정합니다. 이 필드가 `VK_TRUE`이면 `[0, texWidth)` 및 `[0, texHeight)` 범위 내의 좌표를 간단히 사용할 수 있습니다. `VK_FALSE`인 경우 모든 축에서 `[0, 1)` 범위를 사용하여 텍셀을 주소 지정합니다. 실제 애플리케이션에서는 거의 항상 정규화된 좌표를 사용합니다. 그렇게 하면 정확히 같은 좌표를 사용하여 다양한 해상도의 텍스처를 사용할 수 있습니다.
 
 ```c++
 samplerInfo.compareEnable = VK_FALSE;
 samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
 ```
 
-If a comparison function is enabled, then texels will first be compared to a
-value, and the result of that comparison is used in filtering operations. This
-is mainly used for [percentage-closer filtering](https://developer.nvidia.com/gpugems/GPUGems/gpugems_ch11.html)
-on shadow maps. We'll look at this in a future chapter.
+비교 함수가 활성화되면 텍셀은 먼저 값과 비교되고, 그 비교 결과는 필터링 작업에 사용됩니다. 이는 주로 [퍼센트 클로저 필터링](https://developer.nvidia.com/gpugems/GPUGems/gpugems_ch11.html)에 사용되며, 그림자 맵에서 사용됩니다. 이에 대해서는 미래의 장에서 살펴볼 것입니다.
 
 ```c++
 samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
@@ -280,12 +224,9 @@ samplerInfo.minLod = 0.0f;
 samplerInfo.maxLod = 0.0f;
 ```
 
-All of these fields apply to mipmapping. We will look at mipmapping in a [later
-chapter](/Generating_Mipmaps), but basically it's another type of filter that can be applied.
+이 모든 필드는 미핑에 적용됩니다. [나중에 나오는 장](/Generating_Mipmaps)에서 미핑을 살펴볼 것이지만, 기본적으로 적용될 수 있는 또 다른 유형의 필터입니다.
 
-The functioning of the sampler is now fully defined. Add a class member to
-hold the handle of the sampler object and create the sampler with
-`vkCreateSampler`:
+이제 샘플러의 기능이 완전히 정의되었습니다. 샘플러 객체의 핸들을 보관할 클래스 멤버를 추가하고 `vkCreateSampler`를 사용하여 샘플러를 생성하세요:
 
 ```c++
 VkImageView textureImageView;
@@ -302,14 +243,9 @@ void createTextureSampler() {
 }
 ```
 
-Note the sampler does not reference a `VkImage` anywhere. The sampler is a
-distinct object that provides an interface to extract colors from a texture. It
-can be applied to any image you want, whether it is 1D, 2D or 3D. This is
-different from many older APIs, which combined texture images and filtering into
-a single state.
+샘플러는 어디에도 `VkImage`를 참조하지 않습니다. 샘플러는 텍스처에서 색상을 추출하는 인터페이스를 제공하는 독립적인 객체입니다. 원하는 이미지에 적용할 수 있으며, 1D, 2D 또는 3D일 수 있습니다. 이는 많은 오래된 API와 다르며, 이러한 API는 텍스처 이미지와 필터링을 단일 상태로 결합했습니다.
 
-Destroy the sampler at the end of the program when we'll no longer be accessing
-the image:
+프로그램 끝에서 이미지에 더 이상 액세스하지 않을 때 샘플러를 파괴하세요:
 
 ```c++
 void cleanup() {
@@ -322,23 +258,20 @@ void cleanup() {
 }
 ```
 
-## Anisotropy device feature
+## 등방성 디바이스 기능
 
-If you run your program right now, you'll see a validation layer message like
-this:
+지금 프로그램을 실행하면 다음과 같은 유효성 검사 계층 메시지를 볼 수 있습니다:
 
 ![](/images/validation_layer_anisotropy.png)
 
-That's because anisotropic filtering is actually an optional device feature. We
-need to update the `createLogicalDevice` function to request it:
+그 이유는 등방성 필터링이 실제로 선택적 디바이스 기능이기 때문입니다. `createLogicalDevice` 함수를 업데이트하여 이를 요청해야 합니다:
 
 ```c++
 VkPhysicalDeviceFeatures deviceFeatures{};
 deviceFeatures.samplerAnisotropy = VK_TRUE;
 ```
 
-And even though it is very unlikely that a modern graphics card will not support
-it, we should update `isDeviceSuitable` to check if it is available:
+현대 그래픽 카드가 이를 지원하지 않을 가능성은 매우 낮지만, `isDeviceSuitable`을 업데이트하여 이를 사용할 수 있는지 확인해야 합니다:
 
 ```c++
 bool isDeviceSuitable(VkPhysicalDevice device) {
@@ -351,21 +284,19 @@ bool isDeviceSuitable(VkPhysicalDevice device) {
 }
 ```
 
-The `vkGetPhysicalDeviceFeatures` repurposes the `VkPhysicalDeviceFeatures`
-struct to indicate which features are supported rather than requested by setting
-the boolean values.
+`vkGetPhysicalDeviceFeatures`는 지원되는 기능을 나타내기 위해
 
-Instead of enforcing the availability of anisotropic filtering, it's also
-possible to simply not use it by conditionally setting:
+ `VkPhysicalDeviceFeatures` 구조체를 재사용합니다. 불리언 값으로 설정됩니다.
+
+등방성 필터링을 강제로 사용할 필요는 없으며, 다음과 같이 조건부로 설정할 수 있습니다:
 
 ```c++
 samplerInfo.anisotropyEnable = VK_FALSE;
 samplerInfo.maxAnisotropy = 1.0f;
 ```
 
-In the next chapter we will expose the image and sampler objects to the shaders
-to draw the texture onto the square.
+다음 장에서는 이미지와 샘플러 객체를 셰이더에 노출하여 사각형에 텍스처를 그릴 것입니다.
 
-[C++ code](/code/25_sampler.cpp) /
-[Vertex shader](/code/22_shader_ubo.vert) /
-[Fragment shader](/code/22_shader_ubo.frag)
+[C++ 코드](/code/25_sampler.cpp) /
+[버텍스 셰이더](/code/22_shader_ubo.vert) /
+[프래그먼트 셰이더](/code/22_shader_ubo.frag)

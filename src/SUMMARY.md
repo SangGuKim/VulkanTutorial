@@ -15,7 +15,7 @@
     - [이미지 뷰](ko/03_Drawing_a_triangle/01_Presentation/02_Image_views.md)
   - [그래픽 파이프라인 기초](ko/03_Drawing_a_triangle/02_Graphics_pipeline_basics/__Graphics_pipeline_basics.md)
     - [소개](ko/03_Drawing_a_triangle/02_Graphics_pipeline_basics/00_Introduction.md)
-    - [쉐이더 모듈](ko/03_Drawing_a_triangle/02_Graphics_pipeline_basics/01_Shader_modules.md)
+    - [셰이더 모듈](ko/03_Drawing_a_triangle/02_Graphics_pipeline_basics/01_Shader_modules.md)
     - [고정 기능](ko/03_Drawing_a_triangle/02_Graphics_pipeline_basics/02_Fixed_functions.md)
     - [렌더 패스](ko/03_Drawing_a_triangle/02_Graphics_pipeline_basics/03_Render_passes.md)
     - [결론](ko/03_Drawing_a_triangle/02_Graphics_pipeline_basics/04_Conclusion.md)
@@ -41,7 +41,7 @@
 - [모델 불러오기](ko/08_Loading_models.md)
 - [밉맵 생성](ko/09_Generating_Mipmaps.md)
 - [멀티샘플링](ko/10_Multisampling.md)
-- [컴퓨트 쉐이더](ko/11_Compute_Shader.md)
+- [컴퓨트 셰이더](ko/11_Compute_Shader.md)
 - [자주 묻는 질문](ko/90_FAQ.md)
 - [개인정보 보호정책](ko/95_Privacy_policy.md)
 

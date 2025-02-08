@@ -1,42 +1,33 @@
-# FAQ
+# 자주 묻는 질문 (FAQ)
 
-This page lists solutions to common problems that you may encounter while
-developing Vulkan applications.
+이 페이지에서는 Vulkan 애플리케이션 개발 중에 마주칠 수 있는 일반적인 문제들에 대한 해결책을 제시합니다.
 
-## I get an access violation error in the core validation layer
+## 코어 검증 레이어에서 액세스 위반 오류가 발생합니다
 
-Make sure
-that MSI Afterburner / RivaTuner Statistics Server is not running, because it
-has some compatibility problems with Vulkan.
+MSI 애프터버너 / 리바튜너 통계 서버가 실행 중인지 확인하세요. 이 프로그램들은 Vulkan과의 호환성 문제가 있습니다.
 
-## I don't see any messages from the validation layers / Validation layers are not available
+## 검증 레이어에서 메시지가 보이지 않습니다 / 검증 레이어를 사용할 수 없습니다
 
-First make sure that the validation layers get a chance to print errors by keeping the
-terminal open after your program exits. You can do this from Visual Studio by running
-your program with Ctrl-F5 instead of F5, and on Linux by executing your program from
-a terminal window. If there are still no messages and you are sure that validation
-layers are turned on, then you should ensure that your Vulkan SDK is correctly
-installed by following the "Verify the Installation" instructions [on this page](https://vulkan.lunarg.com/doc/view/1.2.135.0/windows/getting_started.html). Also ensure that your SDK version is at least 1.1.106.0 to support the `VK_LAYER_KHRONOS_validation` layer.
+먼저 프로그램이 종료된 후 터미널이 열려 있는지 확인하여 검증 레이어가 오류를 출력할 기회가 있는지 확인하세요. Visual Studio에서는 프로그램을 F5가 아닌 Ctrl-F5로 실행하고, Linux에서는 터미널 창에서 프로그램을 실행합니다. 메시지가 여전히 없고 검증 레이어가 활성화되어 있는지 확신하는 경우, "설치 확인" 지침을 따라 Vulkan SDK가 올바르게 설치되어 있는지 확인하세요. 또한 `VK_LAYER_KHRONOS_validation` 레이어를 지원하려면 SDK 버전이 최소 1.1.106.0 이상인지 확인하세요.
 
-## vkCreateSwapchainKHR triggers an error in SteamOverlayVulkanLayer64.dll
+## vkCreateSwapchainKHR가 SteamOverlayVulkanLayer64.dll에서 오류를 발생시킵니다
 
-This appears to be a compatibility problem in the Steam client beta. There are a
-few possible workarounds:
-    * Opt out of the Steam beta program.
-    * Set the `DISABLE_VK_LAYER_VALVE_steam_overlay_1` environment variable to `1`
-    * Delete the Steam overlay Vulkan layer entry in the registry under `HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\Vulkan\ImplicitLayers`
+이는 Steam 클라이언트 베타의 호환성 문제로 보입니다. 몇 가지 가능한 해결책이 있습니다:
+- Steam 베타 프로그램에서 탈퇴합니다.
+- `DISABLE_VK_LAYER_VALVE_steam_overlay_1` 환경 변수를 `1`로 설정합니다.
+- `HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\Vulkan\ImplicitLayers` 하위에 있는 Steam 오버레이 Vulkan 레이어 항목을 삭제합니다.
 
-Example:
+예시:
 
 ![](/images/steam_layers_env.png)
 
-## vkCreateInstance fails with VK_ERROR_INCOMPATIBLE_DRIVER
+## vkCreateInstance가 VK_ERROR_INCOMPATIBLE_DRIVER로 실패합니다
 
-If you are using MacOS with the latest MoltenVK SDK then `vkCreateInstance` may return the `VK_ERROR_INCOMPATIBLE_DRIVER` error. This is because [Vulkan SDK version 1.3.216 or newer](https://vulkan.lunarg.com/doc/sdk/1.3.216.0/mac/getting_started.html) requires you to enable the `VK_KHR_PORTABILITY_subset` extension to use MoltenVK, because it is currently not fully conformant.
+MacOS를 사용 중이고 최신 MoltenVK SDK를 사용하는 경우 `vkCreateInstance`가 `VK_ERROR_INCOMPATIBLE_DRIVER` 오류를 반환할 수 있습니다. 이는 [Vulkan SDK 버전 1.3.216 이상](https://vulkan.lunarg.com/doc/sdk/1.3.216.0/mac/getting_started.html)에서 MoltenVK를 사용하기 위해 `VK_KHR_PORTABILITY_subset` 확장을 활성화해야 하기 때문입니다. 현재 MoltenVK는 완전히 호환되지 않습니다.
 
-You have to add the `VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR` flag to your `VkInstanceCreateInfo` and add `VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME` to your instance extension list.
+`VkInstanceCreateInfo`에 `VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR` 플래그를 추가하고 인스턴스 확장 목록에 `VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME`을 추가해야 합니다.
 
-Code example:
+코드 예시:
 
 ```c++
 ...

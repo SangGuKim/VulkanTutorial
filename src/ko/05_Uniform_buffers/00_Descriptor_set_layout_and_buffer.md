@@ -54,12 +54,15 @@ void main() {
 이전 장에서 나온 사각형을 3D로 회전시켜서 매 프레임마다 모델, 뷰 및 프로젝션 행렬을 
 업데이트할 것입니다.
 
-## Vertex shader
+네, 계속해서 전체 문서를 번역하겠습니다. 아래는 번역본입니다:
 
-Modify the vertex shader to include the uniform buffer object like it was
-specified above. I will assume that you are familiar with MVP transformations.
-If you're not, see [the resource](https://www.opengl-tutorial.org/beginners-tutorials/tutorial-3-matrices/)
-mentioned in the first chapter.
+---
+
+## 버텍스 셰이더
+
+위에서 지정한 대로 유니폼 버퍼 객체를 포함하도록 버텍스 셰이더를 수정하세요. MVP 변환에 
+익숙하다고 가정합니다. 그렇지 않다면 첫 장에서 언급된 [자료](https://www.opengl-tutorial.org/beginners-tutorials/tutorial-3-matrices/)를 
+참조하세요.
 
 ```glsl
 #version 450
@@ -81,20 +84,17 @@ void main() {
 }
 ```
 
-Note that the order of the `uniform`, `in` and `out` declarations doesn't
-matter. The `binding` directive is similar to the `location` directive for
-attributes. We're going to reference this binding in the descriptor set layout. The
-line with `gl_Position` is changed to use the transformations to compute the
-final position in clip coordinates. Unlike the 2D triangles, the last component
-of the clip coordinates may not be `1`, which will result in a division when
-converted to the final normalized device coordinates on the screen. This is used
-in perspective projection as the *perspective division* and is essential for
-making closer objects look larger than objects that are further away.
+`uniform`, `in` 및 `out` 선언의 순서는 중요하지 않습니다. `binding` 지시어는 속성에 
+대한 `location` 지시어와 유사합니다. 이 바인딩을 디스크립터 세트 레이아웃에서 참조할 
+것입니다. `gl_Position` 줄은 최종 위치를 클립 좌표로 계산하기 위해 변환을 사용하도록 
+변경되었습니다. 2D 삼각형과 달리, 클립 좌표의 마지막 구성요소가 `1`이 아닐 수 있으며, 
+최종 정규화된 디바이스 좌표로 변환될 때 나눗셈이 발생합니다. 이는 원근 분할(perspective 
+division)로 사용되며, 더 가까운 객체가 더 멀리 있는 객체보다 크게 보이게 하는 데 필수적입니다.
 
-## Descriptor set layout
+## 디스크립터 세트 레이아웃
 
-The next step is to define the UBO on the C++ side and to tell Vulkan about this
-descriptor in the vertex shader.
+다음 단계는 C++ 측에서 UBO를 정의하고 버텍스 셰이더의 이 디스크립터에 대해 Vulkan에 
+알리는 것입니다.
 
 ```c++
 struct UniformBufferObject {
@@ -104,15 +104,14 @@ struct UniformBufferObject {
 };
 ```
 
-We can exactly match the definition in the shader using data types in GLM. The
-data in the matrices is binary compatible with the way the shader expects it, so
-we can later just `memcpy` a `UniformBufferObject` to a `VkBuffer`.
+GLM의 데이터 유형을 사용하여 셰이더의 정의와 정확히 일치하게 할 수 있습니다. 행렬의 데이터는 
+셰이더가 기대하는 방식과 바이너리 호환되므로, 나중에 `UniformBufferObject`를 `VkBuffer`에 
+`memcpy`할 수 있습니다.
 
-We need to provide details about every descriptor binding used in the shaders
-for pipeline creation, just like we had to do for every vertex attribute and its
-`location` index. We'll set up a new function to define all of this information
-called `createDescriptorSetLayout`. It should be called right before pipeline
-creation, because we're going to need it there.
+셰이더에 사용된 모든 디스크립터 바인딩에 대한 세부 정보를 파이프라인 생성을 위해 제공해야 
+합니다. 이는 모든 버텍스 속성과 그 `location` 인덱스를 해야 했던 것과 마찬가지입니다. 
+이 모든 정보를 정의할 새로운 함수 `createDescriptorSetLayout`을 설정할 것입니다. 
+파이프라인 생성 전에 호출해야 합니다. 왜냐하면 이 정보가 필요하기 때문입니다.
 
 ```c++
 void initVulkan() {
@@ -129,8 +128,7 @@ void createDescriptorSetLayout() {
 }
 ```
 
-Every binding needs to be described through a `VkDescriptorSetLayoutBinding`
-struct.
+모든 바인딩은 `VkDescriptorSetLayoutBinding` 구조체를 통해 설명되어야 합니다.
 
 ```c++
 void createDescriptorSetLayout() {
@@ -141,41 +139,39 @@ void createDescriptorSetLayout() {
 }
 ```
 
-The first two fields specify the `binding` used in the shader and the type of
-descriptor, which is a uniform buffer object. It is possible for the shader
-variable to represent an array of uniform buffer objects, and `descriptorCount`
-specifies the number of values in the array. This could be used to specify a
-transformation for each of the bones in a skeleton for skeletal animation, for
-example. Our MVP transformation is in a single uniform buffer object, so we're
-using a `descriptorCount` of `1`.
+첫 두 필드는 셰이더에서 사용된 `binding`과 디스크립터의 유형을 지정하며, 여기서는 
+유니폼 버퍼 객체입니다. 셰이더 변수가 유니폼 버퍼 객체의 배열을 나타낼 수 있으며, 
+`descriptorCount`는 배열의 값 수를 지정합니다. 예를 들어, 골격 애니메이션에 대해 
+각 뼈에 대한 변환을 지정하는 데 사용할 수 있습니다. 우리의 MVP 변환은 단일 유니폼 
+버퍼 객체에 있으므로 `descriptorCount`는 `1`을 사용합니다.
 
 ```c++
 uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 ```
 
-We also need to specify in which shader stages the descriptor is going to be
-referenced. The `stageFlags` field can be a combination of `VkShaderStageFlagBits` values
-or the value `VK_SHADER_STAGE_ALL_GRAPHICS`. In our case, we're only referencing
-the descriptor from the vertex shader.
+디스크립터가 참조될 셰이더 스테이지를 지정해야 합니다. `stageFlags` 필드는 `VkShaderStageFlagBits` 
+값의 조합이거나 `VK_SHADER_STAGE_ALL_GRAPHICS` 값일 수 있습니다. 우리의 경우에는 
+버텍스 셰이더에서만 디스크립터를 참조합니다.
 
 ```c++
-uboLayoutBinding.pImmutableSamplers = nullptr; // Optional
+uboLayoutBinding.pImmutableSamplers =
+
+ nullptr; // Optional
 ```
 
-The `pImmutableSamplers` field is only relevant for image sampling related
-descriptors, which we'll look at later. You can leave this to its default value.
+`pImmutableSamplers` 필드는 이미지 샘플링 관련 디스크립터에만 관련이 있으며, 나중에 
+살펴볼 것입니다. 기본값으로 둘 수 있습니다.
 
-All of the descriptor bindings are combined into a single
-`VkDescriptorSetLayout` object. Define a new class member above
-`pipelineLayout`:
+모든 디스크립터 바인딩은 하나의 `VkDescriptorSetLayout` 객체로 결합됩니다. `pipelineLayout` 
+위에 새 클래스 멤버를 정의하세요:
 
 ```c++
 VkDescriptorSetLayout descriptorSetLayout;
 VkPipelineLayout pipelineLayout;
 ```
 
-We can then create it using `vkCreateDescriptorSetLayout`. This function accepts
-a simple `VkDescriptorSetLayoutCreateInfo` with the array of bindings:
+`vkCreateDescriptorSetLayout`을 사용하여 생성할 수 있습니다. 이 함수는 바인딩 배열을 가진 
+간단한 `VkDescriptorSetLayoutCreateInfo`를 수띍니다:
 
 ```c++
 VkDescriptorSetLayoutCreateInfo layoutInfo{};
@@ -188,10 +184,9 @@ if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayo
 }
 ```
 
-We need to specify the descriptor set layout during pipeline creation to tell
-Vulkan which descriptors the shaders will be using. Descriptor set layouts are
-specified in the pipeline layout object. Modify the `VkPipelineLayoutCreateInfo`
-to reference the layout object:
+파이프라인 생성 중에 디스크립터 세트 레이아웃을 지정해야 합니다. Vulkan이 셰이더가 사용할 
+디스크립터를 알 수 있도록 하기 위해 파이프라인 레이아웃 객체에서 디스크립터 세트 레이아웃을 
+참조해야 합니다. `VkPipelineLayoutCreateInfo`를 수정하여 레이아웃 객체를 참조하세요:
 
 ```c++
 VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
@@ -200,13 +195,12 @@ pipelineLayoutInfo.setLayoutCount = 1;
 pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
 ```
 
-You may be wondering why it's possible to specify multiple descriptor set
-layouts here, because a single one already includes all of the bindings. We'll
-get back to that in the next chapter, where we'll look into descriptor pools and
-descriptor sets.
+여러 디스크립터 세트 레이아웃을 지정할 수 있는 이유가 궁금할 수 있습니다. 왜냐하면 하나의 
+디스크립터 세트 레이아웃은 이미 모든 바인딩을 포함하기 때문입니다. 다음 장에서 디스크립터 
+풀과 디스크립터 세트를 살펴볼 때 이에 대해 더 자세히 알아볼 것입니다.
 
-The descriptor set layout should stick around while we may create new graphics
-pipelines i.e. until the program ends:
+디스크립터 세트 레이아웃은 프로그램이 종료될 때까지 새 그래픽 파이프라인을 생성할 수 있어야 
+하므로 유지해야 합니다:
 
 ```c++
 void cleanup() {
@@ -218,21 +212,19 @@ void cleanup() {
 }
 ```
 
-## Uniform buffer
+## 유니폼 버퍼
 
-In the next chapter we'll specify the buffer that contains the UBO data for the
-shader, but we need to create this buffer first. We're going to copy new data to
-the uniform buffer every frame, so it doesn't really make any sense to have a
-staging buffer. It would just add extra overhead in this case and likely degrade
-performance instead of improving it.
+다음 장에서 셰이더가 이 변환 데이터에 접근할 수 있도록 `VkBuffer`를 유니폼 버퍼 디스크립터에 
+실제로 바인딩하는 디스크립터 세트를 살펴볼 것입니다. 그러나 먼저 이 버퍼를 생성해야 합니다. 
+매 프레임마다 새 데이터를 유니폼 버퍼에 복사할 것이므로 스테이징 버퍼를 사용하는 것은 의미가 
+없습니다. 이 경우 추가 작업만 필요하며 성능을 저하시킬 수 있습니다.
 
-We should have multiple buffers, because multiple frames may be in flight at the same
-time and we don't want to update the buffer in preparation of the next frame while a
-previous one is still reading from it! Thus, we need to have as many uniform buffers
-as we have frames in flight, and write to a uniform buffer that is not currently
-being read by the GPU.
+동시에 진행 중인 여러 프레임이 있을 수 있으므로, 이전 프레임이 여전히 읽고 있는 동안 다음 
+프레임을 준비하기 위해 버퍼를 업데이트하고 싶지 않기 때문에 프레임이 진행 중인 수만큼 
+유니폼 버퍼를 가지고 있어야 합니다. 따라서 프레임이 진행 중인 수만큼 유니폼 버퍼가 있어야 
+하며, GPU가 현재 읽고 있지 않은 유니폼 버퍼에 쓰기를 수행해야 합니다.
 
-To that end, add new class members for `uniformBuffers`, and `uniformBuffersMemory`:
+이를 위해 `uniformBuffers`, `uniformBuffersMemory`와 같은 새 클래스 멤버를 추가하세요:
 
 ```c++
 VkBuffer indexBuffer;
@@ -243,8 +235,7 @@ std::vector<VkDeviceMemory> uniformBuffersMemory;
 std::vector<void*> uniformBuffersMapped;
 ```
 
-Similarly, create a new function `createUniformBuffers` that is called after
-`createIndexBuffer` and allocates the buffers:
+비슷하게, `createIndexBuffer` 후에 호출되고 버퍼를 할당하는 새 함수 `createUniformBuffers`를 생성하세요:
 
 ```c++
 void initVulkan() {
@@ -272,9 +263,9 @@ void createUniformBuffers() {
 }
 ```
 
-We map the buffer right after creation using `vkMapMemory` to get a pointer to which we can write the data later on. The buffer stays mapped to this pointer for the application's whole lifetime. This technique is called **"persistent mapping"** and works on all Vulkan implementations. Not having to map the buffer every time we need to update it increases performances, as mapping is not free.
+생성 후 바로 `vkMapMemory`를 사용하여 나중에 데이터를 쓸 포인터를 얻습니다. 버퍼는 애플리케이션의 전체 수명 동안 이 포인터에 매핑되어 있습니다. 이 기법을 **"영구 매핑"**이라고 하며 모든 Vulkan 구현에서 작동합니다. 매번 업데이트할 필요 없이 매핑되지 않아 성능이 향상됩니다.
 
-The uniform data will be used for all draw calls, so the buffer containing it should only be destroyed when we stop rendering.
+유니폼 데이터는 모든 그리기 호출에 사용되므로, 그것을 포함하는 버퍼는 렌더링을 중지할 때까지 제거되어서는 안 됩니다.
 
 ```c++
 void cleanup() {
@@ -292,9 +283,9 @@ void cleanup() {
 }
 ```
 
-## Updating uniform data
+## 유니폼 데이터 업데이트
 
-Create a new function `updateUniformBuffer` and add a call to it from the `drawFrame` function before submitting the next frame:
+`drawFrame` 함수에서 다음 프레임을 제출하기 전에 새 함수 `updateUniformBuffer`를 호출하는 새 함수를 만드세요:
 
 ```c++
 void drawFrame() {
@@ -317,27 +308,19 @@ void updateUniformBuffer(uint32_t currentImage) {
 }
 ```
 
-This function will generate a new transformation every frame to make the
-geometry spin around. We need to include two new headers to implement this
-functionality:
+이 함수는 매 프레임 기하학이 회전하도록 새 변환을 생성합니다. 이 기능을 구현하려면 두 개의 새 헤더를 포함해야 합니다:
 
 ```c++
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include <chrono>
+#include
+
+ <chrono>
 ```
 
-The `glm/gtc/matrix_transform.hpp` header exposes functions that can be used to
-generate model transformations like `glm::rotate`, view transformations like
-`glm::lookAt` and projection transformations like `glm::perspective`. The
-`GLM_FORCE_RADIANS` definition is necessary to make sure that functions like
-`glm::rotate` use radians as arguments, to avoid any possible confusion.
-
-The `chrono` standard library header exposes functions to do precise
-timekeeping. We'll use this to make sure that the geometry rotates 90 degrees
-per second regardless of frame rate.
+GLM은 각도를 라디안으로 기대합니다. `glm/gtc/matrix_transform.hpp`는 `glm::rotate` 및 `glm::perspective`와 같은 행렬 변환 함수를 제공합니다. 이제 함수에서 회전 및 투영 변환을 계산합니다:
 
 ```c++
 void updateUniformBuffer(uint32_t currentImage) {
@@ -345,69 +328,27 @@ void updateUniformBuffer(uint32_t currentImage) {
 
     auto currentTime = std::chrono::high_resolution_clock::now();
     float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+    UniformBufferObject ubo{};
+    ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float) swapChainExtent.height, 0.1f, 10.0f);
+    ubo.proj[1][1] *= -1;
+
+    memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
 }
 ```
 
-The `updateUniformBuffer` function will start out with some logic to calculate
-the time in seconds since rendering has started with floating point accuracy.
+`startTime`은 첫 프레임이 렌더링되기 전에 저장됩니다. 이는 회전 변환을 계산하기 위해 타이머로 사용됩니다. `glm::rotate`는 주어진 각도로 주어진 축 주위에 4x4 변환 행렬을 생성합니다. `glm::lookAt` 함수는 뷰 변환을 생성합니다. 이는 시점, 초점 지점 및 "위쪽" 벡터를 사용합니다. 마지막으로, `glm::perspective`는 주어진 수직 시야각, 종횡비 및 깊이 범위를 가진 투영 변환을 생성합니다.
 
-We will now define the model, view and projection transformations in the
-uniform buffer object. The model rotation will be a simple rotation around the
-Z-axis using the `time` variable:
+Vulkan은 클립 좌표에서 Y 좌표가 아래로 확장되도록 요구합니다. 그러나 GLM은 OpenGL을 기반으로 하며, 이는 Y 좌표가 위로 확장되도록 요구합니다. `ubo.proj[1][1]`에 `-1`을 곱하여 Y 좌표를 반전시켜 이를 수정합니다.
 
-```c++
-UniformBufferObject ubo{};
-ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-```
+그리기 호출이 데이터에 접근하기 전에 매 프레임마다 유니폼 버퍼의 적절한 부분을 업데이트합니다.
 
-The `glm::rotate` function takes an existing transformation, rotation angle and
-rotation axis as parameters. The `glm::mat4(1.0f)` constructor returns an
-identity matrix. Using a rotation angle of `time * glm::radians(90.0f)`
-accomplishes the purpose of rotation 90 degrees per second.
+## 결론
 
-```c++
-ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-```
+이 장에서는 유니폼 버퍼를 생성하고 매 프레임마다 그 내용을 업데이트하는 방법을 배웠습니다. 다음 장에서는 이 버퍼를 버텍스 셰이더에 연결하기 위해 필요한 디스크립터 세트를 할당하고 설정할 것입니다.
 
-For the view transformation I've decided to look at the geometry from above at a
-45 degree angle. The `glm::lookAt` function takes the eye position, center
-position and up axis as parameters.
-
-```c++
-ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float) swapChainExtent.height, 0.1f, 10.0f);
-```
-
-I've chosen to use a perspective projection with a 45 degree vertical
-field-of-view. The other parameters are the aspect ratio, near and far
-view planes. It is important to use the current swap chain extent to calculate
-the aspect ratio to take into account the new width and height of the window
-after a resize.
-
-```c++
-ubo.proj[1][1] *= -1;
-```
-
-GLM was originally designed for OpenGL, where the Y coordinate of the clip
-coordinates is inverted. The easiest way to compensate for that is to flip the
-sign on the scaling factor of the Y axis in the projection matrix. If you don't
-do this, then the image will be rendered upside down.
-
-All of the transformations are defined now, so we can copy the data in the
-uniform buffer object to the current uniform buffer. This happens in exactly the same
-way as we did for vertex buffers, except without a staging buffer. As noted earlier, we only map the uniform buffer once, so we can directly write to it without having to map again:
-
-```c++
-memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
-```
-
-Using a UBO this way is not the most efficient way to pass frequently changing
-values to the shader. A more efficient way to pass a small buffer of data to
-shaders are *push constants*. We may look at these in a future chapter.
-
-In the next chapter we'll look at descriptor sets, which will actually bind the
-`VkBuffer`s to the uniform buffer descriptors so that the shader can access this
-transformation data.
-
-[C++ code](/code/22_descriptor_set_layout.cpp) /
-[Vertex shader](/code/22_shader_ubo.vert) /
-[Fragment shader](/code/22_shader_ubo.frag)
+[C++ 코드](/code/22_descriptor_sets.cpp) /
+[버텍스 셰이더](/code/20_shader_ubo.vert) /
+[프래그먼트 셰이더](/code/20_shader_ubo.frag)

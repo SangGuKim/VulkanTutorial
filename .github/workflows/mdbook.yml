@@ -46,8 +46,8 @@ jobs:
         run: mdbook build
       - name: Copy resources
         run: |
-          cp -r ./images ./book/
-          cp -r ./code ./book/
+          cp -r ./src/images ./book/
+          cp -r ./src/code ./book/
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

@@ -44,6 +44,10 @@ jobs:
         uses: actions/configure-pages@v5
       - name: Build with mdBook
         run: mdbook build
+      - name: Copy resources
+        run: |
+          cp -r ./images ./book/
+          cp -r ./code ./book/
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
